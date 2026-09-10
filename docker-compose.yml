@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kaya-kalpa-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kaya}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kaya_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-kaya_kalpa}
+      # La estética opera en horario de Argentina. Sin DST, pero fijamos la
+      # zona para que cualquier función de fecha del motor coincida con la app.
+      TZ: America/Argentina/Cordoba
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Named volume de Docker a propósito: un bind mount a una carpeta de
+      # Windows degrada mucho el rendimiento de Postgres y rompe permisos.
+      - kaya_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-kaya} -d ${POSTGRES_DB:-kaya_kalpa}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  kaya_pgdata:
+    name: kaya_kalpa_pgdata

@@ -1,0 +1,171 @@
+/* =============================================================================
+   KAYA KALPA — Sistema de diseño
+   =============================================================================
+   Tailwind v4 se configura desde el CSS, no desde un `tailwind.config.js`. Los
+   tokens de `@theme` no son solo variables: cada uno genera utilidades. Definir
+   `--color-forest` es lo que hace que existan `bg-forest`, `text-forest` y
+   `border-forest`.
+
+   LA PALETA NO ES INVENTADA
+
+   Estos valores se muestrearon píxel a píxel de la lista de precios oficial de
+   la estética. El prompt pide (textualmente) evitar los colores saturados, la
+   estética "tech" y el look genérico de gimnasio o spa: por eso todo el sistema
+   es verde, crema y gris cálido, sin un solo color vivo.
+
+   Regla al agregar algo: si un color nuevo no es un tono de estos, no va. La
+   forma de que un sitio se vea coherente no es elegir bien cada color por
+   separado, es no elegir de nuevo.
+   ============================================================================= */
+
+@import 'tailwindcss';
+
+@theme {
+  /* ---------------------------------------------------------------------------
+     Verdes
+     --------------------------------------------------------------------------- */
+  /** Primario: botones, navbar, footer, chips de categoría. */
+  --color-forest: #4c6548;
+  /** Un paso más oscuro, para hover y estados activos. */
+  --color-forest-dark: #3a4f37;
+  /** Títulos y texto de máximo contraste. */
+  --color-deep: #23301f;
+  /** Acentos suaves, bordes, hover secundario. */
+  --color-sage: #7a8c72;
+  /** Detalles botánicos e iconografía. */
+  --color-olive: #6b7355;
+
+  /* ---------------------------------------------------------------------------
+     Neutros cálidos
+     --------------------------------------------------------------------------- */
+  /** Fondo principal. Cálido, no blanco: da sensación de amplitud. */
+  --color-cream: #f6f5f1;
+  /** Superficies de tarjeta, sobre el crema. */
+  --color-ivory: #ffffff;
+  /** Separadores y bordes. */
+  --color-beige: #eae5db;
+  /** Texto de cuerpo y precios. */
+  --color-ink: #363636;
+  /** Texto secundario, descripciones, ayudas. */
+  --color-ink-soft: #6b6b6b;
+
+  /* ---------------------------------------------------------------------------
+     Tipografía
+     ---------------------------------------------------------------------------
+     La lista de precios usa una serif de caja alta con autoridad para los
+     títulos, y una sans limpia para el cuerpo.
+
+     Los archivos de las fuentes todavía no están: el primer nombre de cada pila
+     es la fuente elegida y lo que sigue es el reemplazo real hasta que llegue.
+     Cuando el usuario entregue los archivos, se dejan en `src/assets/fonts/`, se
+     agregan los `@font-face` abajo y estas pilas empiezan a usarlas solas. Hasta
+     entonces Georgia hace el trabajo: es una serif con autoridad, no un
+     remedio de compromiso que haya que disimular. */
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-sans:
+    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+
+  /* ---------------------------------------------------------------------------
+     Formas y sombras
+     ---------------------------------------------------------------------------
+     Radios chicos y sombras casi imperceptibles: la elegancia acá viene de la
+     tipografía y del espacio, no del efecto. */
+  --radius-soft: 0.5rem;
+  --radius-card: 0.75rem;
+
+  --shadow-card: 0 1px 2px rgb(35 48 31 / 0.04), 0 8px 24px rgb(35 48 31 / 0.06);
+  --shadow-float: 0 4px 12px rgb(35 48 31 / 0.12), 0 12px 32px rgb(35 48 31 / 0.12);
+}
+
+/* =============================================================================
+   Base
+   ============================================================================= */
+
+@layer base {
+  html {
+    /* Los saltos entre secciones se leen mejor deslizando que de golpe. */
+    scroll-behavior: smooth;
+    /* Compensa la navbar fija cuando se navega a un ancla. */
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    /* Sin esto, iOS agranda el texto solo al girar el teléfono. */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    color: var(--color-deep);
+    /* Las serif de caja alta necesitan aire entre líneas para no verse apretadas. */
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Un solo lugar define cómo se ve el foco, en vez de que cada componente
+     invente el suyo. `:focus-visible` y no `:focus` para que no aparezca el
+     anillo al hacer clic con el mouse, solo al navegar con el teclado. */
+  :focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-sage);
+    color: var(--color-ivory);
+  }
+
+  /* Respeta a quien pidió menos movimiento en su sistema operativo. Las
+     animaciones de la fase 11 tienen que seguir siendo legibles sin animarse. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* =============================================================================
+   Utilidades propias
+   ============================================================================= */
+
+@utility container-page {
+  /* Un solo ancho de contenido para todo el sitio. Mobile-first: el padding
+     mínimo es 1rem porque en un teléfono de 375 px cada píxel cuenta, y el
+     máximo evita que en un monitor grande el texto se vuelva una línea larga
+     imposible de seguir. */
+  margin-inline: auto;
+  width: 100%;
+  max-width: 72rem;
+  padding-inline: 1rem;
+
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+
+  @media (width >= 64rem) {
+    padding-inline: 2rem;
+  }
+}

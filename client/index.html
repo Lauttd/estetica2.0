@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Los valores de acá son los que ve un buscador o alguien que comparte el
+      link sin entrar al sitio. Cada página los reemplaza con los suyos propios
+      —React 19 los iza solo al `<head`— así que estos son el piso, no el techo.
+
+      El título nombra el rubro y la ciudad porque así busca la gente: nadie
+      escribe "KAYA KALPA" sin conocerla de antes.
+    -->
+    <title>KAYA KALPA Estética Profesional | Estética en Formosa</title>
+    <meta
+      name="description"
+      content="Tratamientos faciales, corporales, manos, pies, pestañas y cejas en Formosa. Reservá tu turno online en KAYA KALPA Estética Profesional."
+    />
+    <meta name="theme-color" content="#4C6548" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KAYA KALPA Estética Profesional" />
+    <meta property="og:locale" content="es_AR" />
+    <meta
+      property="og:title"
+      content="KAYA KALPA Estética Profesional | Estética en Formosa"
+    />
+    <meta
+      property="og:description"
+      content="Tratamientos faciales, corporales, manos, pies, pestañas y cejas en Formosa. Reservá tu turno online."
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!--
+      El logo real todavía no está. Cuando llegue va en `src/assets/logo/` y se
+      cambia una sola ruta en `src/config/brand.ts`.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

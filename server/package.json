@@ -1,0 +1,59 @@
+{
+  "name": "@kaya-kalpa/server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API REST de KAYA KALPA Estética Profesional",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
+    "check:datetime": "tsx checks/datetime.check.ts",
+    "check:core": "tsx checks/core.check.ts",
+    "check:availability": "tsx checks/availability.check.ts",
+    "check:concurrency": "tsx checks/booking-concurrency.check.ts",
+    "check": "npm run check:datetime && npm run check:core && npm run check:availability",
+    "db:generate": "dotenv -e ../.env -- prisma generate",
+    "db:migrate": "dotenv -e ../.env -- prisma migrate dev",
+    "db:migrate:create": "dotenv -e ../.env -- prisma migrate dev --create-only",
+    "db:migrate:deploy": "dotenv -e ../.env -- prisma migrate deploy",
+    "db:reset": "dotenv -e ../.env -- prisma migrate reset --force",
+    "db:seed": "dotenv -e ../.env -- tsx prisma/seed.ts",
+    "db:studio": "dotenv -e ../.env -- prisma studio"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
+    "@prisma/client": "^6.3.1",
+    "compression": "^1.7.5",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.0.1",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.7.5",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.10.7",
+    "dotenv-cli": "^11.0.0",
+    "eslint": "^9.39.5",
+    "pino-pretty": "^13.0.0",
+    "prisma": "^6.3.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.70.0"
+  }
+}

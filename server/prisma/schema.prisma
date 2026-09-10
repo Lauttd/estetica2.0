@@ -1,0 +1,457 @@
+// =============================================================================
+// KAYA KALPA — Schema de base de datos
+// =============================================================================
+// Convenciones de este schema:
+//
+//   · Dinero      -> Int en CENTAVOS (nunca Float). `null` = "a consultar",
+//                    que es distinto de "gratis". Ver Service.priceCents.
+//   · Instantes    -> DateTime @db.Timestamptz(3), siempre en UTC.
+//   · Día cal.     -> DateTime @db.Date, sin hora. Se serializa SIEMPRE como
+//                    "YYYY-MM-DD" (ver utils/datetime.ts), nunca con toISOString().
+//   · Horarios     -> Int = minutos desde medianoche LOCAL del salón.
+//                    Evita toda aritmética de zonas horarias en la grilla.
+//
+// ATENCIÓN: hay una segunda migración escrita a mano que agrega el constraint
+// EXCLUDE que impide el doble turno. Ver
+// prisma/migrations/*_booking_overlap_guard/migration.sql
+// NUNCA correr `prisma db push`: no conoce esos objetos y los perdería.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum BookingStatus {
+  PENDING // reservado online, esperando confirmación de la estética
+  CONFIRMED // confirmado por la estética
+  COMPLETED // ya atendido
+  CANCELLED // cancelado (libera el horario)
+  NO_SHOW // el cliente no vino
+}
+
+enum AdminRole {
+  ADMIN // todo, incluido el catálogo y los precios
+  STAFF // turnos, clientes, mensajes y lectura del resto
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+// =============================================================================
+// CATÁLOGO
+// =============================================================================
+
+model Category {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  name        String
+  slug        String   @unique
+  description String?
+  image       String?
+  icon        String? // nombre del icono en el set del frontend
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services Service[]
+
+  @@index([active, sortOrder])
+  @@map("categories")
+}
+
+model Service {
+  id               String   @id @default(uuid(7)) @db.Uuid
+  categoryId       String   @db.Uuid
+  name             String
+  slug             String   @unique
+  shortDescription String
+  description      String?
+  /// Viñetas de beneficios, tal como las lista el material de la estética.
+  benefits         String[] @default([])
+  /// "Se recomienda 1 vez al mes", "Protocolo de 3 a 4 sesiones", etc.
+  recommendations  String?
+  /// Aclaraciones sueltas: "No alarga", "Indoloro", "Sin tiempo de recuperación".
+  extraInfo        String?
+
+  /// Duración en minutos. NULLABLE a propósito: el material no da la duración de
+  /// varios servicios y el prompt prohíbe inventarla. Un servicio sin duración
+  /// no se puede agendar online -> la UI ofrece consultar por WhatsApp.
+  durationMin Int?
+  /// Precio en centavos. `null` = a consultar (distinto de 0 = bonificado).
+  priceCents  Int?
+  currency    String @default("ARS")
+
+  image String?
+
+  /// Agrupación dentro de la categoría: "Retirados", "Paquetes", "Combos".
+  subgroup String?
+
+  /// false para lo que no se agenda como turno suelto (paquetes mensuales,
+  /// manta térmica). Se muestra en el catálogo pero sin botón de reservar.
+  bookable Boolean @default(true)
+
+  /// true = contiene datos que la estética todavía no confirmó (duración o
+  /// precio faltante). El panel administrativo los lista para completar.
+  needsReview Boolean @default(false)
+
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category        Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  professionals   ProfessionalService[]
+  bookingServices BookingService[]
+
+  @@index([categoryId, active, sortOrder])
+  @@index([active, bookable, sortOrder])
+  @@index([active, featured])
+  @@map("services")
+}
+
+// =============================================================================
+// PROFESIONALES
+// =============================================================================
+
+model Professional {
+  id     String  @id @default(uuid(7)) @db.Uuid
+  name   String
+  slug   String  @unique
+  title  String? // "Cosmetóloga", "Manicura"
+  bio    String?
+  avatar String?
+  /// Color con el que se identifica en la agenda del panel.
+  color  String  @default("#4C6548")
+
+  /// Reglas de agenda propias de cada profesional.
+  slotStepMin    Int @default(15) // cada cuántos minutos se ofrece un inicio
+  bufferMin      Int @default(10) // limpieza/recambio tras cada turno
+  minLeadMin     Int @default(120) // anticipación mínima
+  maxAdvanceDays Int @default(60) // hasta cuántos días hacia adelante
+
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services      ProfessionalService[]
+  businessHours BusinessHour[]
+  blockedDates  BlockedDate[]
+  blockedTimes  BlockedTime[]
+  bookings      Booking[]
+
+  @@index([active, sortOrder])
+  @@map("professionals")
+}
+
+/// Qué servicios realiza cada profesional. Es lo que permite que el paso
+/// "elegir profesional" del wizard filtre a quienes pueden hacer TODOS los
+/// servicios del carrito, y no solo alguno.
+model ProfessionalService {
+  professionalId String   @db.Uuid
+  serviceId      String   @db.Uuid
+  createdAt      DateTime @default(now())
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  service      Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([professionalId, serviceId])
+  @@index([serviceId])
+  @@map("professional_services")
+}
+
+// =============================================================================
+// DISPONIBILIDAD
+// =============================================================================
+
+/// Horario de atención de un profesional para un día de la semana.
+/// Varias filas por día = turno partido (mañana / siesta / tarde).
+/// `weekday`: 0 = domingo ... 6 = sábado (igual que Date.getDay()).
+model BusinessHour {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  professionalId String   @db.Uuid
+  weekday        Int
+  startMin       Int // 540 = 09:00
+  endMin         Int // 780 = 13:00
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, weekday, startMin])
+  @@index([professionalId, weekday, active])
+  @@map("business_hours")
+}
+
+/// Día completo bloqueado (feriado, vacaciones, capacitación).
+/// professionalId = null => bloquea a TODOS.
+model BlockedDate {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  professionalId String?  @db.Uuid
+  date           DateTime @db.Date
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  professional Professional? @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, date])
+  @@index([date])
+  @@map("blocked_dates")
+}
+
+/// Ventana bloqueada dentro de un día (trámite, almuerzo puntual).
+/// professionalId = null => bloquea a TODOS.
+model BlockedTime {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  professionalId String?  @db.Uuid
+  date           DateTime @db.Date
+  startMin       Int
+  endMin         Int
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  professional Professional? @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([date, professionalId])
+  @@map("blocked_times")
+}
+
+// =============================================================================
+// CLIENTES Y TURNOS
+// =============================================================================
+
+model Customer {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  firstName String
+  lastName  String
+  /// Normalizado a formato internacional sin "+" ni separadores: 5493705194299
+  phone     String   @unique
+  email     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([lastName, firstName])
+  @@map("customers")
+}
+
+model Booking {
+  id             String @id @default(uuid(7)) @db.Uuid
+  /// Código corto que se le da al cliente para consultar o cancelar.
+  code           String @unique
+  customerId     String @db.Uuid
+  professionalId String @db.Uuid
+
+  /// Día calendario del salón. Se consulta por esta columna, nunca por rango
+  /// de instantes: así la disponibilidad no hace aritmética de zonas horarias.
+  date DateTime @db.Date
+
+  /// Instantes reales en UTC.
+  startAt       DateTime @db.Timestamptz(3)
+  /// Lo que se le muestra al cliente: inicio + duración de los servicios.
+  endAt         DateTime @db.Timestamptz(3)
+  /// Lo que realmente bloquea la agenda: endAt + buffer de limpieza.
+  /// Es la columna sobre la que corre el constraint EXCLUDE.
+  occupiedUntil DateTime @db.Timestamptz(3)
+
+  status BookingStatus @default(PENDING)
+
+  totalPriceCents   Int     @default(0)
+  /// true si algún servicio del turno no tiene precio cargado: el total mostrado
+  /// es parcial y hay que confirmarlo con la estética.
+  hasPriceOnRequest Boolean @default(false)
+  totalDurationMin  Int
+
+  notes String?
+
+  /// Token opaco para que el cliente cancele sin tener cuenta.
+  cancelToken String    @unique @default(uuid(7))
+  cancelledAt DateTime?
+  cancelledBy String? // CUSTOMER | ADMIN | STAFF | SYSTEM
+
+  createdByAdminId String? @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer       Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  professional   Professional       @relation(fields: [professionalId], references: [id], onDelete: Restrict)
+  createdByAdmin AdminUser?         @relation(fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  services       BookingService[]
+  history        BookingStatusLog[]
+
+  @@index([date, professionalId, status])
+  @@index([professionalId, startAt])
+  @@index([status, date])
+  @@index([customerId, createdAt])
+  @@map("bookings")
+}
+
+/// Copia del nombre, precio y duración al momento de reservar. Si la estética
+/// cambia la lista de precios, los turnos ya tomados conservan lo que se cobró.
+model BookingService {
+  id                  String @id @default(uuid(7)) @db.Uuid
+  bookingId           String @db.Uuid
+  serviceId           String @db.Uuid
+  nameSnapshot        String
+  priceCentsSnapshot  Int? // null = precio a consultar
+  durationMinSnapshot Int
+  sortOrder           Int    @default(0)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@unique([bookingId, serviceId])
+  @@index([serviceId])
+  @@map("booking_services")
+}
+
+/// Historial de cambios de estado. Sirve para saber quién canceló y cuándo.
+model BookingStatusLog {
+  id         String         @id @default(uuid(7)) @db.Uuid
+  bookingId  String         @db.Uuid
+  fromStatus BookingStatus?
+  toStatus   BookingStatus
+  reason     String?
+  actorType  String         @default("SYSTEM") // SYSTEM | ADMIN | STAFF | CUSTOMER
+  actorId    String?        @db.Uuid
+  createdAt  DateTime       @default(now())
+
+  booking Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor   AdminUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId, createdAt])
+  @@map("booking_status_logs")
+}
+
+// =============================================================================
+// ADMINISTRACIÓN
+// =============================================================================
+
+model AdminUser {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  email              String    @unique
+  passwordHash       String
+  name               String
+  role               AdminRole @default(STAFF)
+  active             Boolean   @default(true)
+  /// Se pone en true cuando el seed genera la contraseña. Obliga a cambiarla.
+  mustChangePassword Boolean   @default(false)
+  /// Se incrementa al cambiar la contraseña: invalida todos los JWT emitidos.
+  tokenVersion       Int       @default(0)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  refreshTokens   AdminRefreshToken[]
+  bookingsCreated Booking[]
+  statusChanges   BookingStatusLog[]
+
+  @@map("admin_users")
+}
+
+/// Refresh tokens opacos, guardados solo como hash. La rotación con detección
+/// de reuso es lo que convierte un token robado en una sesión inutilizable.
+model AdminRefreshToken {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  adminId      String    @db.Uuid
+  tokenHash    String    @unique
+  /// Todos los tokens derivados de un mismo login comparten familyId. Si se
+  /// presenta uno ya revocado, se revoca la familia entera.
+  familyId     String    @db.Uuid
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?   @db.Uuid
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, revokedAt])
+  @@index([expiresAt])
+  @@map("admin_refresh_tokens")
+}
+
+// =============================================================================
+// CONTENIDO
+// =============================================================================
+
+model FAQ {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  question  String
+  answer    String
+  category  String?
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, sortOrder])
+  @@map("faqs")
+}
+
+model ContactMessage {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  name      String
+  email     String?
+  phone     String?
+  subject   String?
+  message   String
+  status    ContactStatus @default(NEW)
+  readAt    DateTime?
+  repliedAt DateTime?
+  ip        String?
+  userAgent String?
+  createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+  @@map("contact_messages")
+}
+
+/// La galería es data, no una lista hardcodeada en React. Mientras la estética
+/// no entregue las fotos reales, las filas apuntan a placeholders en la paleta.
+model GalleryImage {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  src       String
+  alt       String
+  category  String?
+  width     Int?
+  height    Int?
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([active, sortOrder])
+  @@map("gallery_images")
+}
+
+/// Configuración editable desde el panel: dirección, WhatsApp, redes, y las
+/// banderas que marcan qué datos siguen siendo placeholder. Evita hardcodear
+/// datos de contacto en los componentes.
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}

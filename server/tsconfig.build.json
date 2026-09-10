@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  // `rootDir` apunta a `src` (y no a la raíz del paquete, como el tsconfig base)
+  // para que la salida sea `dist/server.js` y no `dist/src/server.js`. Es lo que
+  // esperan `main` y `start` en package.json: sin esto, `npm start` arranca un
+  // archivo que no existe.
+  //
+  // Como consecuencia, `env.ts` encuentra el `.env` de la raíz con la MISMA ruta
+  // relativa en desarrollo y en producción (ver el comentario de ENV_CANDIDATES).
+  "compilerOptions": { "rootDir": "src" },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "prisma", "checks", "**/*.test.ts"]
+}

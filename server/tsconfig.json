@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    // A propósito no se declara cómo se resuelven los módulos: con
+    // `module: commonjs` su valor por defecto ya es la resolución clásica de
+    // Node. Declararla era redundante y además adelantaba un problema, porque
+    // TypeScript 6 elimina esa opción y el proyecto dejaría de compilar por una
+    // línea que no hacía falta. Si algún día hay que cambiarla, va acá.
+    "rootDir": ".",
+    "outDir": "dist",
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+
+    // §39 prohíbe el código muerto. Estas dos lo detectan en el momento de
+    // compilar y no cuando alguien se acuerda de correr el linter: un import que
+    // quedó de una refactorización, o un parámetro que ya nadie pasa.
+    // Un parámetro legítimamente sin usar se marca con `_` adelante.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+
+    "sourceMap": true,
+    "declaration": false,
+
+    "types": ["node"]
+  },
+  // `checks/` entra acá para que `npm run typecheck` también lo revise: un
+  // archivo de verificación que dejó de compilar no verifica nada.
+  // `tsconfig.build.json` lo excluye, así no se publica.
+  "include": ["src/**/*.ts", "prisma/**/*.ts", "checks/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
