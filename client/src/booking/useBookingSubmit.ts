@@ -6,6 +6,10 @@
 // porque lo que hay que hacer al fallar no es volver a dibujar el resumen: es
 // mover a la persona a otro paso, descartar caché vieja y, en un caso, sacar algo
 // del carrito. Nada de eso es una decisión de presentación.
+//
+// Lo que **no** hace es vaciar el carrito y el borrador al salir bien: eso pasó a
+// `useBookingArrival`, del otro lado de la navegación. El comentario del `navigate`
+// cuenta qué se rompía cuando se hacía acá.
 // =============================================================================
 
 import { useCallback, useState } from 'react';
@@ -17,6 +21,7 @@ import { fetchAllServices } from '@/api/services.api';
 import { useCart } from '@/cart/useCart';
 import { useBooking } from '@/booking/useBooking';
 import { rememberCancelToken } from '@/booking/cancel-tokens';
+import { justBookedState } from '@/booking/booking.arrival';
 import { handlingFor, type StaleData } from '@/booking/error-steps';
 import { bookingParamsFrom, bookingPathWith } from '@/booking/booking.params';
 import { BOOKING_STEPS } from '@/booking/booking.steps';
@@ -43,7 +48,9 @@ export function useBookingSubmit(): BookingSubmit {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { slot, customer } = booking;
-  const { items, removeItem, clear } = cart;
+  // `clear` no está: el carrito no se vacía acá. Lo hace `useBookingArrival` al
+  // llegar a la confirmación, y el comentario de más abajo explica por qué.
+  const { items, removeItem } = cart;
 
   const submit = useCallback(async () => {
     // El guard del armazón ya garantiza que estos datos existen para llegar al
@@ -112,12 +119,31 @@ export function useBookingSubmit(): BookingSubmit {
       // para que volver al asistente muestre la disponibilidad real.
       await queryClient.invalidateQueries({ queryKey: [AVAILABILITY_KEY] });
 
-      booking.reset();
-      clear();
-
-      // `replace` para que el botón "atrás" no devuelva al resumen de un turno que
-      // ya se reservó: atrás se vuelve al sitio, no a un formulario completado.
-      navigate(PATHS.bookingConfirmed(detail.code), { replace: true });
+      /**
+       * Y recién ahora se navega, sin tocar todavía el carrito ni el borrador.
+       *
+       * El orden no es un detalle de estilo: vaciarlos acá rompía la reserva
+       * entera. `navigate` corre dentro de un `startTransition` de React Router 7
+       * —o sea, es de baja prioridad—, así que si en el mismo instante se vacían el
+       * carrito y el borrador, React dibuja primero esas actualizaciones urgentes y
+       * deja la navegación para después. En ese render intermedio la dirección
+       * todavía es `/turnos/resumen` con el carrito vacío, el guard de
+       * `BookingLayout` ve un resumen sin datos y manda al primer paso: el turno
+       * quedaba creado —el 201 ya había llegado— pero la persona terminaba en
+       * `/turnos/servicios`, sin código y sin forma de cancelarlo.
+       *
+       * El estado del que depende el guard no se toca hasta que el guard se
+       * desmontó. De eso se encarga `useBookingArrival`, del otro lado.
+       *
+       * `replace` para que el botón "atrás" no devuelva al resumen de un turno que
+       * ya se reservó: atrás se vuelve al sitio, no a un formulario completado. Y
+       * el `state` es lo que le dice a la confirmación que esta visita viene de
+       * reservar, que es cuando corresponde descartar lo elegido.
+       */
+      navigate(PATHS.bookingConfirmed(detail.code), {
+        replace: true,
+        state: justBookedState(),
+      });
     } catch (error) {
       const code: ErrorCodeValue =
         error instanceof ApiError ? error.code : ErrorCode.INTERNAL_ERROR;
@@ -164,7 +190,7 @@ export function useBookingSubmit(): BookingSubmit {
     } finally {
       setIsSubmitting(false);
     }
-  }, [slot, customer, items, removeItem, clear, booking, navigate, location.search, queryClient]);
+  }, [slot, customer, items, removeItem, booking, navigate, location.search, queryClient]);
 
   return { submit, isSubmitting };
 }

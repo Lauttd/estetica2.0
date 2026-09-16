@@ -18,15 +18,15 @@ comentario dice "§20 pide…", está señalando el requisito que ese código cu
 
 ## Dónde quedamos
 
-El trabajo se organizó en 10 fases (`Fase 0` … `Fase 9`). **Al 2026-09-10 van las
-tres primeras.**
+El trabajo se organizó en 10 fases (`Fase 0` … `Fase 9`). **Al 2026-09-11 van las
+cuatro primeras.**
 
 | Fase | Qué es | Estado |
 | --- | --- | --- |
 | 0 | Cimientos: capa transversal del cliente (`AppProviders`, `apiRequest` con auth y reintento, `query-client` como factory) y los tres arreglos del backend | **hecha** |
 | 1 | Catálogo público (grilla, filtros, buscador, ficha) + andamiaje del prerenderizado | **hecha** |
-| 2 | Carrito y asistente de turnos: las 6 pantallas, el guard, la barra, el envío y la confirmación | **casi** — ver el bug abierto |
-| 3 | Home e institucionales (Nosotros, Contacto, Galería, FAQ, 404) y el contenido que falta | pendiente |
+| 2 | Carrito y asistente de turnos: las 6 pantallas, el guard, la barra, el envío y la confirmación | **hecha** |
+| 3 | Home e institucionales (Nosotros, Contacto, Galería, FAQ, 404) y el contenido que falta | **hecha** |
 | 4 | Sesión y armazón del panel (`/admin/*` con `import()` dinámico) | pendiente |
 | 5–7 | Las pantallas del panel (§32 entero) | pendiente |
 | 8 | Prerenderizado completo, SEO y servir la SPA desde Express | pendiente |
@@ -35,28 +35,42 @@ tres primeras.**
 El detalle de cada fase, con sus criterios de aceptación, está en
 `C:\Users\IPF-2026\.claude\plans\ahora-quiero-que-segun-optimized-moler.md`.
 
-### Bug abierto (lo primero al retomar)
+### El bug que se arregló al cerrar la Fase 2
 
-**Confirmar un turno crea el turno pero no lleva a la confirmación.** `POST
-/api/bookings` responde **201** —el turno queda creado de verdad, con su código y
-su token— y la aplicación termina en `/turnos/servicios` en vez de
-`/turnos/confirmado/:code`. Se reproduce siempre con
-`node client/checks/ui-flow.mjs`.
+**Confirmar un turno creaba el turno pero no llevaba a la confirmación.** `POST
+/api/bookings` respondía **201** —el turno quedaba creado de verdad, con su código
+y su token— y la aplicación terminaba en `/turnos/servicios` en vez de
+`/turnos/confirmado/:code`. Ya no pasa: `node client/checks/ui-flow.mjs` llega
+hasta el final.
 
-Sospecha principal, **sin confirmar**: en `useBookingSubmit.ts` el éxito hace
-`booking.reset()` y `clear()` **antes** de `navigate(...)`. Esos dos vacían el
-carrito y el borrador, así que la pantalla de resumen queda con el estado vacío;
-si React alcanza a reprocesar antes de que la navegación del router se aplique, el
-guard de `BookingLayout` ve un carrito vacío y manda al primer paso —que es
-exactamente lo que se observa—. La dirección que se pide es la correcta
-(`PATHS.bookingConfirmed` arma `/turnos/confirmado/<code>`, y la ruta existe).
+La sospecha era que `booking.reset()` y `clear()` corrían **antes** de
+`navigate(...)` y que React alcanzaba a reprocesar en el medio. La dirección era
+la correcta, pero el mecanismo no: no es que React "alcance" a reprocesar.
+`navigate` corre dentro de un **`startTransition`** de React Router 7
+(`RouterProvider` envuelve el `setState` del router cuando `useTransitions` no está
+en `false`), o sea que la navegación es de **baja prioridad**. Las actualizaciones
+urgentes del mismo instante —vaciar el carrito y el borrador— se dibujan primero,
+y en ese render intermedio la dirección todavía es `/turnos/resumen` con el carrito
+vacío: el guard de `BookingLayout` ve un resumen sin datos y manda al primer paso.
 
-Arreglo probable: navegar primero y limpiar después
-(`await navigate(...)` antes de `booking.reset()`/`clear()`), o no limpiar hasta
-que la confirmación esté montada. **Confirmar la causa antes de tocar**: la
-sospecha explica el síntoma, pero no está medida.
+De ahí sale la invariante que quedó escrita en el código:
 
-### Lo que quedó verificado en esta etapa
+> **El estado del que depende el guard no se toca hasta que el guard se desmontó.**
+
+Por eso la limpieza ya no vive en `useBookingSubmit` sino en `useBookingArrival`,
+del otro lado de la navegación: la confirmación se abre, y recién ahí —con el
+asistente ya desmontado— se descarta el carrito y el borrador. La marca que le dice
+a la confirmación que esa visita viene de reservar viaja en el `state` de la entrada
+del historial y **se consume** (`navigate(..., { replace: true, state: null })`): si
+no, un "atrás" posterior volvería a dispararla y le vaciaría a alguien el carrito
+que acaba de armar. Los tres archivos involucrados son
+`booking/booking.arrival.ts` (puro, sin React), `booking/useBookingArrival.ts` (el
+efecto) y `pages/Booking/BookingConfirmedPage.tsx` (quien lo llama).
+
+**La lección**: la sospecha explicaba el síntoma y aun así el mecanismo era otro.
+Se midió antes de tocar, y el arreglo salió de la medición, no de la sospecha.
+
+### Lo que quedó verificado en la Fase 2
 
 - **§20, extremo a extremo**: los botones de horario dibujados son exactamente los
   que devolvió el servidor —mismo conjunto, mismo orden, mismo texto—. Lo comprueba
@@ -71,7 +85,47 @@ sospecha explica el síntoma, pero no está medida.
   real); la consulta sin token no devuelve `cancelToken`. `canCancel` en cambio es
   **solo el estado del turno** —dice si todavía se puede cancelar, no si quien
   pregunta tiene permiso—.
+- **El asistente entero, por la interfaz real**: reservar de punta a punta, llegar
+  a `/turnos/confirmado/:code`, ver el código, y cancelar desde el botón de la
+  confirmación —con el token olvidándose recién cuando el servidor confirmó—.
+  `ui-flow.mjs` comprueba además que al llegar el carrito quede vacío y el borrador
+  descartado, del lado de la confirmación y no del envío (ver el bug de arriba).
 - `npm run check:concurrency --workspace=server`: **13 de 13**.
+
+### Lo que quedó verificado en la Fase 3
+
+Las nueve direcciones públicas —inicio, catálogo, ficha, asistente, nosotros,
+contacto, galería, preguntas frecuentes y 404— recorridas en un navegador real a
+390 px y a 1280 px:
+
+- **Un solo `<h1>` por página, cero imágenes rotas, cero imágenes sin `alt`, cero
+  enlaces vacíos.** Es la lista que §37 pide y la que más fácil se rompe sin que
+  nadie lo note: una imagen que no carga no rompe nada, simplemente no está.
+- **§41 en los dos lugares donde se afirma un dato sin confirmar.** Con
+  `hours_are_placeholder` puesto, la página de contacto **no emite ni una franja
+  horaria**: se ve el aviso de que se están confirmando y nada más. La consulta de
+  horarios ni siquiera sale —`enabled: false`—, así que las filas placeholder no
+  llegan a la caché de nadie. La galería hace lo mismo con sus ilustraciones.
+- **Las institucionales no afirman nada que la estética no haya dicho.** Se
+  comprobó contra el texto dibujado que no aparece "años de experiencia", "un
+  equipo de profesionales certificadas" ni "productos de primeras marcas": los
+  profesionales cargados en la base se llaman literalmente "Profesional 1" y
+  "Profesional 2", así que no hay equipo del que hablar.
+- **§33, con el navegador midiendo**: en un teléfono hay exactamente un "Reservar
+  turno" a la vista —la barra fija—, el botón del navbar está oculto y los dos
+  flotantes no se pisan entre sí ni tapan la última línea del pie cuando el scroll
+  llega al fondo.
+- **El `canonical` y el `og:image` se probaron en las dos ramas**: con
+  `VITE_SITE_URL` cargada salen absolutas y correctas —`og:image` incluida, con una
+  foto de servicio puesta a mano y sacada después—; sin ella no se emite ninguna de
+  las dos, que es lo que corresponde mientras el dominio no exista.
+- `npm run check --workspace=server`: **78 correctas, 0 fallidas** (22 + 17 + 39).
+
+**El defecto que encontró el recorrido**: la galería titulaba "Algunos de los
+trabajos que hacemos en el salón" con las ilustraciones puestas, dos centímetros
+arriba del aviso que dice que son dibujos. El subtítulo ahora depende de la misma
+bandera que el aviso. Una página que se contradice a sí misma es peor que una que
+no dice nada, porque la que no dice nada no se cree.
 
 ---
 
@@ -137,17 +191,37 @@ node client/checks/ui-flow.mjs   # requiere `npm run dev` andando
 ```
 
 Recorre el asistente entero y verifica §20. Está en `client/checks/README.md`, que
-además dice qué parte falla hoy y por qué.
+además dice qué resaca deja en la base y por qué no la limpia.
 
-### Una verificación que fallaba por lo que no miraba
+### Verificaciones que fallaban por lo que no miraban
+
+Son la misma lección tres veces: **una verificación falla o pasa por datos que no
+son suyos, y se aprende a ignorarla**. El día que avise de algo real ya nadie la
+lee.
 
 `check:concurrency` tenía una comprobación —"ningún profesional quedó con dos
 turnos en el mismo horario"— que contaba **toda** la tabla `Booking`, sin filtrar
 por los turnos que la propia prueba acababa de crear. Pasaba solamente con la base
 vacía: cualquier turno ajeno la hacía fallar. Ahora cuenta solo lo suyo, y además
 exige que la lista no esté vacía —un `every` sobre nada es `true`, así que sin eso
-habría pasado por no haber mirado nada—. Si una verificación falla por lo que no
-mira, se aprende a ignorarla y el día que avise de algo real ya nadie la lee.
+habría pasado por no haber mirado nada—.
+
+La misma prueba limpiaba con `deleteMany({ firstName: 'Prueba' })`, y `ui-flow.mjs`
+—la verificación del cliente— también carga una clienta que se llama "Prueba". Dos
+defectos en una línea: se llevaba puestas clientas ajenas, y **fallaba**, porque
+esas clientas tienen turnos que esta prueba no conoce y el `DELETE` moría con una
+violación de clave ajena. Ahora limpia **por id**, que es lo único que la prueba
+generó ella y por lo tanto lo único que puede borrar sin equivocarse. Regla: una
+verificación borra exactamente lo que creó, y lo identifica por algo que solo ella
+pueda haber generado —nunca por un nombre, ni por una fecha, ni por cualquier otro
+dato que otra cosa pueda compartir—.
+
+Y la sección de cancelación de `ui-flow.mjs` buscaba un botón —"Cancelar turno"—
+que la aplicación nunca dibujó (dice "Cancelar el turno"), y encima se saltaba su
+propia comprobación cuando no encontraba un diálogo de confirmación. Nunca había
+podido pasar, y si hubiera pasado no habría comprobado nada. Regla: **la
+verificación se escribe contra lo que la aplicación hace, no contra lo que uno
+recuerda que hace** —y si no encuentra lo que busca, tiene que fallar, no seguir—.
 
 ### Migraciones — leer antes de tocar la base
 
@@ -340,16 +414,26 @@ No son bugs; están documentados en `CONFLICTOS.md`.
 
 - **El panel administrativo no tiene interfaz.** La API de `/api/admin/*` está
   completa y protegida, pero `client/src/pages/` no tiene ninguna página de admin.
-- **El Home y las institucionales son cascarones.** Tienen `<PageHeader>` y poco
-  más; el hero todavía no dice el texto del prompt y falta el contenido de §5–§7.
-  Es la Fase 3.
+- **Las institucionales todavía no se prerenderizan.** El Home, Nosotros, Contacto,
+  Galería, FAQ y el 404 tienen su contenido completo, pero `getPrerenderPaths()`
+  solo devuelve el catálogo y las fichas: esas seis se sirven como armazón y las
+  dibuja el navegador. Las consecuencias se notan en dos lugares: un buscador que
+  no ejecuta JavaScript ve el `<title>` genérico, y las etiquetas `og:` de la página
+  no llegan a WhatsApp, que tampoco lo ejecuta. Es la Fase 8.
+- **El `canonical` y el `og:image` no se emiten.** Necesitan una dirección absoluta
+  y el dominio no está definido: `VITE_SITE_URL` está vacía en el `.env` y las dos
+  etiquetas se omiten a propósito —un `canonical` inventado es peor que ninguno—.
+  Con cargar esa línea en el `.env` empiezan a salir solas. Ver `CONFLICTOS.md`,
+  punto 13.
 - **La moneda está fijada en `'ARS'` en el cliente** (`DEFAULT_CURRENCY` en
   `utils/money.ts`). No es un invento —`Service.currency` tiene `@default("ARS")`—
   pero `BookingServiceLine` no lleva moneda, así que el cliente la asume. Si algún
   día se carga un servicio en otra moneda, esto hay que arreglarlo antes. Anotado
   en `CONFLICTOS.md`.
-- **La galería es de solo lectura por API** (sin CRUD), y sus imágenes placeholder
-  (`client/public/images/gallery/placeholder-{1..4}.svg`) **todavía no existen**.
+- **La galería es de solo lectura por API** (sin CRUD). Sus cuatro ilustraciones
+  (`client/public/images/gallery/placeholder-{1..4}.svg`) ya están dibujadas y se
+  repiten para llenar las ocho filas sembradas; reemplazarlas por las fotos reales
+  es cambiar el `src` de cada fila y apagar `gallery_is_placeholder`.
 - **El logo real no está.** Mientras `BRAND.logoUrl` sea `null`, `<Logo />` dibuja
   el wordmark tipográfico. Cuando llegue el archivo: dejarlo en
   `client/src/assets/logo/`, importarlo en `config/brand.ts` y asignarlo. Es el

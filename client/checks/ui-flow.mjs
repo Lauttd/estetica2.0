@@ -200,25 +200,73 @@ check('La confirmación muestra el turno', confirmado.includes(drawn[0]));
 const tokens = await evaluate(`JSON.parse(localStorage.getItem('kk.cancel-tokens.v1') ?? '{}')`);
 check('El token de cancelación quedó guardado', Object.keys(tokens).length > 0);
 
+/**
+ * El asistente se da por terminado al llegar.
+ *
+ * Se comprueba acá y no en el resumen porque es acá donde tiene que pasar: si el
+ * carrito se vaciara antes de navegar —como se hacía—, el guard del asistente vería
+ * un resumen sin servicios y devolvería al primer paso, que es exactamente el bug
+ * que esta sección existe para no volver a tener. Con el carrito todavía lleno en
+ * este punto, cualquiera puede ver que la limpieza ocurre del lado de la
+ * confirmación y no del lado del envío.
+ */
+const carritoTrasReservar = await evaluate(
+  `JSON.parse(sessionStorage.getItem('kk.cart.v1') ?? '[]')`,
+);
+check(
+  'El carrito quedó vacío al llegar a la confirmación',
+  carritoTrasReservar.length === 0,
+  `quedan ${carritoTrasReservar.length} ítem(s)`,
+);
+/**
+ * Del borrador se comprueba que **lea vacío**, no que la clave no esté: el efecto
+ * que guarda el borrador lo reescribe apenas `reset()` lo deja vacío, así que la
+ * clave sigue ahí con `slot` y `customer` en `null`. `readDraft()` interpreta eso
+ * igual que si no estuviera —es el mismo borrador vacío— y es lo que el asistente
+ * usa para arrancar, así que es eso lo que hay que exigir.
+ */
+const borradorTrasReservar = await evaluate(
+  `JSON.parse(sessionStorage.getItem('kk.booking.v1') ?? '{"slot":null,"customer":null}')`,
+);
+check(
+  'El borrador del turno quedó descartado',
+  borradorTrasReservar.slot === null && borradorTrasReservar.customer === null,
+  JSON.stringify(borradorTrasReservar).slice(0, 120),
+);
+
 console.log('\n── 4. Cancelar desde la interfaz ──\n');
 
-await click(`b.textContent.trim() === 'Cancelar turno'`, { label: 'Cancelar turno' });
-const habiaDialogo = await evaluate(`(() => {
-  const b = [...document.querySelectorAll('button')]
-    .filter((el) => ${visible})
-    .find((el) => /cancelar/i.test(el.textContent.trim()) && el.textContent.trim() !== 'Cancelar turno');
-  if (!b) return false;
-  b.click();
-  return b.textContent.trim();
-})()`);
+/**
+ * El botón dice "Cancelar el turno" y cancela en el acto: no hay un diálogo de
+ * confirmación que apretar después.
+ *
+ * La verificación buscaba "Cancelar turno" —un texto que la aplicación nunca
+ * dibujó— y además, cuando no encontraba un diálogo, se saltaba la comprobación de
+ * que el turno hubiera quedado cancelado. Las dos cosas juntas hacían que esta
+ * sección no pudiera pasar nunca y que, si hubiera pasado, no hubiera comprobado
+ * nada. Ahora se aprieta el botón que existe y se exige el resultado.
+ */
+const CANCELAR = 'Cancelar el turno';
+await click(`b.textContent.trim() === ${JSON.stringify(CANCELAR)}`, { label: CANCELAR });
 
-if (habiaDialogo === false) {
-  console.log('  ·  no apareció un diálogo de confirmación aparte');
-} else {
-  await new Promise((r) => setTimeout(r, 1500));
-  const texto = await evaluate('document.body.innerText');
-  check('Se canceló desde la interfaz', /cancelad/i.test(texto), texto.split('\n').filter(Boolean).slice(0, 3).join(' / '));
-}
+await waitFor(`document.body.innerText.includes('Cancelado')`, {
+  timeout: 10_000,
+  label: 'que el turno figure como cancelado',
+});
+
+const trasCancelar = await evaluate('document.body.innerText');
+check('Se canceló desde la interfaz', trasCancelar.includes('Cancelado'));
+
+// El token se olvida recién cuando el servidor confirmó la cancelación: si
+// quedara guardado, ofrecería cancelar un turno que ya no existe.
+const tokensTrasCancelar = await evaluate(
+  `JSON.parse(localStorage.getItem('kk.cancel-tokens.v1') ?? '{}')`,
+);
+check(
+  'El token se olvidó después de cancelar',
+  Object.keys(tokensTrasCancelar).length === 0,
+  `quedan ${Object.keys(tokensTrasCancelar).length} token(s)`,
+);
 
 console.log(
   problems.length === 0 ? '\n  Todo correcto.\n' : `\n  ${problems.length} en rojo: ${problems.join(' · ')}\n`,

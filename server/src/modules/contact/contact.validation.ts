@@ -13,7 +13,10 @@ import { booleanQuerySchema, optionalText, paginationSchema } from '../shared/va
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_NAME_LENGTH = 120;
 
-const optionalEmail = optionalText(200).refine(
+const optionalEmail = optionalText(
+  200,
+  'El correo no puede superar los 200 caracteres.',
+).refine(
   (value) => value === undefined || z.string().email().safeParse(value).success,
   'El correo no parece válido.',
 );
@@ -46,7 +49,7 @@ export const createContactMessageSchema = z
       .max(MAX_NAME_LENGTH, `El nombre no puede superar los ${MAX_NAME_LENGTH} caracteres.`),
     email: optionalEmail,
     phone: optionalPhone,
-    subject: optionalText(160),
+    subject: optionalText(160, 'El asunto no puede superar los 160 caracteres.'),
     message: z
       .string()
       .trim()

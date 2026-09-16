@@ -14,8 +14,11 @@ import { buildMapsLink, buildWhatsAppLink } from '@/utils/whatsapp';
  * la configuración que la estética edita desde el panel, ninguno está escrito
  * acá.
  *
- * El `pb-28` del final no es decorativo: es el espacio para que el botón
- * flotante de WhatsApp no tape las últimas líneas cuando se llega al fondo.
+ * El `pb-36` del final no es decorativo: es el espacio para que lo que flota abajo
+ * no tape las últimas líneas cuando se llega al fondo. En un teléfono son dos
+ * cosas —la barra de reserva y, por encima, el botón de WhatsApp— y entre las dos
+ * ocupan unos 124 px. Desde `sm` la barra no existe y el botón vuelve al borde, así
+ * que alcanza con el relleno de siempre.
  */
 export function Footer() {
   const { data: settings } = useSiteSettings();
@@ -39,7 +42,7 @@ export function Footer() {
 
   return (
     <footer className="bg-forest mt-24 text-cream">
-      <div className="container-page pt-14 pb-28 sm:pb-14">
+      <div className="container-page pt-14 pb-36 sm:pb-14">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           {/* ---------------------------------------------------------------- */}
           <div>
@@ -73,6 +76,10 @@ export function Footer() {
             <h2 className="text-sm font-semibold tracking-wider text-cream uppercase">
               Secciones
             </h2>
+            {/* La lista entera, sin `mobileOnly`: §27 pide las siete secciones
+                también acá, incluidas las preguntas frecuentes. Antes había
+                además un "Reservar turno" suelto; ahora sobra, porque "Turnos"
+                es una de las secciones y lleva al mismo lado. */}
             <ul className="mt-5 flex flex-col gap-3">
               {MAIN_NAV.map((item) => (
                 <li key={item.to}>
@@ -84,14 +91,6 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link
-                  to={PATHS.booking}
-                  className="text-sm text-cream/80 transition-colors hover:text-cream"
-                >
-                  Reservar turno
-                </Link>
-              </li>
             </ul>
           </nav>
 
@@ -164,7 +163,14 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-cream/20 pt-6 text-xs text-cream/60 sm:flex-row sm:items-center sm:justify-between">
+        {/* La frase del prompt (§27), como cierre. Va con la tipografía de
+            títulos porque no es un dato más del pie: es lo último que se lee y
+            lo que queda. */}
+        <p className="mt-14 text-center font-display text-xl text-cream/90 sm:text-2xl">
+          Tu bienestar es nuestra prioridad.
+        </p>
+
+        <div className="mt-10 flex flex-col gap-3 border-t border-cream/20 pt-6 text-xs text-cream/60 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {BRAND.name} {BRAND.tagline}
             {city !== null && ` · ${city}`}

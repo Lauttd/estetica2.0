@@ -23,6 +23,21 @@ npm run check:concurrency    # doble turno, con el servidor corriendo
 corriendo y escribe en la base. Se corre aparte, a propósito, cuando se toca algo
 del camino de reserva.
 
+### Borra lo que creó, y lo identifica por id
+
+Corre contra la misma base que el resto del desarrollo, así que **nunca** hace un
+`deleteMany({})`: se llevaría puestos los turnos que alguien haya estado cargando a
+mano para probar. Borra los turnos por código y las clientas **por id** —los ids de
+las que inserta ella, más los de las que quedan detrás de los turnos que reservó—,
+que es lo único que puede saber con certeza que generó ella.
+
+Por nombre estaba mal, y de las dos maneras a la vez: se llevaba puestas las
+clientas de `ui-flow.mjs` —que también se llama "Prueba" su clienta de prueba— y
+encima fallaba, porque esas clientas tienen turnos que esta prueba no conoce y el
+`DELETE` moría con una violación de clave ajena. La comprobación final cuenta
+sobrantes **entre las que borró ella** y exige que haya al menos una: contar sobre
+un conjunto vacío da cero sobrantes sin haber comprobado nada.
+
 ## La verificación de turnos
 
 Es la más importante y la única que habla directo con Postgres, salteando la API:

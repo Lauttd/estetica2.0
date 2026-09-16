@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <!--
+    KAYA KALPA — Placeholder de galería 3 de 4: la hoja grande.
+    Ver el comentario de `placeholder-1.svg` para por qué son dibujos y no fotos.
+  -->
+  <title>Ilustración botánica de referencia</title>
+
+  <rect width="800" height="1000" fill="#EAE5DB"/>
+
+  <g fill="none" stroke="#4C6548" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- El contorno: una sola curva cerrada, con la punta arriba y la base abajo. -->
+    <path
+      d="M400 140C570 250 640 470 530 660 480 745 435 810 400 890 365 810 320 745 270 660 160 470 230 250 400 140Z"
+      opacity="0.5"
+    />
+
+    <!-- La nervadura central, que es lo que hace que se lea como una hoja y no
+         como un rombo. -->
+    <path d="M400 140V890" opacity="0.4"/>
+
+    <!-- Las nervaduras laterales, más finas que el contorno. -->
+    <g stroke-width="4" opacity="0.35">
+      <path d="M400 300Q470 292 520 318"/>
+      <path d="M400 420Q490 416 545 452"/>
+      <path d="M400 540Q490 548 540 592"/>
+      <path d="M400 660Q460 674 496 714"/>
+      <path d="M400 300Q330 292 280 318"/>
+      <path d="M400 420Q310 416 255 452"/>
+      <path d="M400 540Q310 548 260 592"/>
+      <path d="M400 660Q340 674 304 714"/>
+    </g>
+  </g>
+</svg>

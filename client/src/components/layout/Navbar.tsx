@@ -8,7 +8,7 @@ import {
 } from '@headlessui/react';
 import { Logo } from '@/components/ui/Logo';
 import { buttonStyles } from '@/components/ui/button';
-import { MAIN_NAV } from '@/config/navigation';
+import { DESKTOP_NAV, MAIN_NAV } from '@/config/navigation';
 import { PATHS } from '@/routes/paths';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { buildWhatsAppLink } from '@/utils/whatsapp';
@@ -59,8 +59,11 @@ export function Navbar() {
           <Logo size="sm" />
         </Link>
 
+        {/* En escritorio se dibuja `DESKTOP_NAV`, que es `MAIN_NAV` sin los
+            enlaces marcados como solo-mobile. Es la misma lista: §5 pide seis
+            enlaces arriba y siete en el panel del teléfono. */}
         <ul className="hidden items-center gap-1 lg:flex">
-          {MAIN_NAV.map((item) => (
+          {DESKTOP_NAV.map((item) => (
             <li key={item.to}>
               <NavLink to={item.to} className={desktopLinkClass}>
                 {item.label}

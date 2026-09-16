@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <!--
+    KAYA KALPA — Placeholder de galería 4 de 4: la rama dentro del arco.
+
+    Es el mismo motivo del inicio, que a su vez sale del material de la estética.
+    Que se repita no es falta de ideas: es lo que hace que la galería se vea como
+    parte del mismo sitio y no como cuatro imágenes sueltas.
+
+    Ver el comentario de `placeholder-1.svg` para por qué son dibujos y no fotos.
+  -->
+  <title>Ilustración botánica de referencia</title>
+
+  <defs>
+    <path id="hoja" d="M0 0C30-30 72-24 100 0 72 24 30 30 0 0Z"/>
+  </defs>
+
+  <rect width="800" height="1000" fill="#EAE5DB"/>
+
+  <g fill="none" stroke="#4C6548" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- El arco de medio punto: dos verticales y un semicírculo de radio 230. -->
+    <path d="M170 900V430a230 230 0 0 1 460 0v470" opacity="0.35"/>
+
+    <!-- La línea de piso. -->
+    <path d="M240 880h320" opacity="0.25"/>
+
+    <!-- La rama, con hojas a los dos lados. -->
+    <path d="M400 880C380 780 420 700 400 600 384 520 416 460 400 380" opacity="0.6"/>
+
+    <g opacity="0.45">
+      <use href="#hoja" transform="translate(408 840) rotate(-30)"/>
+      <use href="#hoja" transform="translate(394 780) rotate(208)"/>
+      <use href="#hoja" transform="translate(410 720) rotate(-24)"/>
+      <use href="#hoja" transform="translate(396 660) rotate(202)"/>
+      <use href="#hoja" transform="translate(408 600) rotate(-34)"/>
+      <use href="#hoja" transform="translate(396 540) rotate(210)"/>
+      <use href="#hoja" transform="translate(408 480) rotate(-26)"/>
+      <use href="#hoja" transform="translate(398 420) rotate(200)"/>
+    </g>
+
+    <g fill="#6B7355" stroke="none" opacity="0.5">
+      <circle cx="400" cy="368" r="12"/>
+      <circle cx="370" cy="390" r="9"/>
+      <circle cx="430" cy="386" r="10"/>
+    </g>
+  </g>
+</svg>

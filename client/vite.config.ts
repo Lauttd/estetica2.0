@@ -6,6 +6,21 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
 
+  /**
+   * El `.env` es el de la raíz, el mismo que leen el servidor y docker-compose.
+   *
+   * Por defecto Vite busca el suyo en la carpeta del workspace —`client/.env`—, que
+   * no existe: el proyecto tiene un solo archivo de entorno y está arriba. Sin
+   * esto, `VITE_SITE_URL` se podría escribir en el `.env` y no pasaría nada, que es
+   * la peor forma de fallar —el dato está, la etiqueta no sale, y nadie encuentra
+   * por qué—.
+   *
+   * No hay riesgo de que se filtre nada: Vite solo expone las variables que
+   * empiezan con `VITE_`, así que la contraseña de Postgres y el secreto de los
+   * tokens siguen sin salir del servidor.
+   */
+  envDir: '..',
+
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <!--
+    KAYA KALPA — Placeholder de galería 1 de 4: la rama en arco.
+
+    Estas cuatro imágenes NO son fotos y no pretenden parecerlo. §41 prohíbe
+    inventar datos, y una foto de stock de otro salón sería exactamente eso: una
+    afirmación falsa sobre este local. Lo que hay acá es un dibujo botánico del
+    mismo lenguaje que el resto del sitio, sobre el fondo del sistema de diseño.
+
+    Van como archivo y no como SVG en línea porque son contenido y no adorno: el
+    día que la estética entregue sus fotos, se reemplazan los cuatro archivos y no
+    se toca ni una línea de código. Por eso el `viewBox` es 800×1000 y no un
+    cuadrado: es la proporción vertical con la que están cargadas las filas de la
+    galería.
+
+    Dentro del archivo sí se puede usar `<defs>` con un id, a diferencia de los
+    SVG que van en línea en el sitio: cada archivo es un documento aparte, así que
+    el id no se puede repetir con el de otro.
+  -->
+  <title>Ilustración botánica de referencia</title>
+
+  <defs>
+    <!-- La hoja, con la base en el origen y la punta hacia la derecha. Así cada
+         `<use>` es un `translate` al punto donde nace y un `rotate` a su ángulo. -->
+    <path id="hoja" d="M0 0C30-30 72-24 100 0 72 24 30 30 0 0Z"/>
+  </defs>
+
+  <rect width="800" height="1000" fill="#EAE5DB"/>
+
+  <g fill="none" stroke="#4C6548" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- El tallo: un arco suave que abre hacia la derecha. Las hojas se apoyan
+         sobre los puntos por los que pasa de verdad, no al lado. -->
+    <path d="M400 900Q470 550 400 200" opacity="0.6"/>
+
+    <g opacity="0.45">
+      <use href="#hoja" transform="translate(412 830) rotate(-30)"/>
+      <use href="#hoja" transform="translate(422 760) rotate(210)"/>
+      <use href="#hoja" transform="translate(429 690) rotate(-25)"/>
+      <use href="#hoja" transform="translate(433 620) rotate(205)"/>
+      <use href="#hoja" transform="translate(435 550) rotate(-32)"/>
+      <use href="#hoja" transform="translate(433 480) rotate(200)"/>
+      <use href="#hoja" transform="translate(429 410) rotate(-22)"/>
+      <use href="#hoja" transform="translate(422 340) rotate(212)"/>
+      <use href="#hoja" transform="translate(412 270) rotate(-28)"/>
+    </g>
+  </g>
+
+  <!-- Los frutos de la punta. -->
+  <g fill="#6B7355" opacity="0.5">
+    <circle cx="400" cy="186" r="14"/>
+    <circle cx="360" cy="214" r="10"/>
+    <circle cx="440" cy="210" r="12"/>
+  </g>
+</svg>

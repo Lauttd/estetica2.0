@@ -1,8 +1,10 @@
 import { Outlet, ScrollRestoration, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { BookingBar } from './BookingBar';
 import { WhatsAppFab } from './WhatsAppFab';
-import { bookingStepIndex } from '@/booking/booking.steps';
+import { bookingStepIndex, isBookingPath } from '@/booking/booking.steps';
+import { PATHS } from '@/routes/paths';
 
 /**
  * El armazón de todas las páginas públicas.
@@ -30,6 +32,31 @@ export function RootLayout() {
    */
   const insideWizard = bookingStepIndex(location.pathname) >= 0;
 
+  /**
+   * La barra de "Reservar turno" del teléfono (§33) se esconde en todo `/turnos`:
+   * pasos, confirmación y consulta.
+   *
+   * Es una regla más ancha que la del botón de WhatsApp, y la diferencia es
+   * deliberada. El de WhatsApp vuelve en la confirmación porque ahí sí tiene
+   * sentido —si algo salió mal, escribir es la salida—, pero ofrecerle "Reservar
+   * turno" a quien acaba de reservar, o a quien entró a consultar el turno que ya
+   * tiene, es ofrecerle lo que ya está haciendo.
+   */
+  const insideBooking = isBookingPath(location.pathname);
+
+  /**
+   * En la página de contacto tampoco, y por un motivo distinto: ahí el botón no
+   * tapa un botón, tapa el **formulario**.
+   *
+   * La página de contacto ya ofrece WhatsApp de tres maneras —el botón de la
+   * columna de datos, el enlace del pie y el número—, así que un cuarto atajo
+   * flotante no agrega un camino: agrega una burbuja sobre los campos. En un
+   * teléfono queda justo encima de "Teléfono" y del aviso que explica que alcanza
+   * con un correo **o** un teléfono, que es justo el dato que hay que leer para no
+   * llenar los dos.
+   */
+  const onContactPage = location.pathname === PATHS.contact;
+
   return (
     <div className="flex min-h-dvh flex-col">
       {/* Visible solo al enfocarlo con el teclado. Sin esto, llegar al contenido
@@ -48,7 +75,8 @@ export function RootLayout() {
       </main>
 
       <Footer />
-      {!insideWizard && <WhatsAppFab />}
+      {!insideBooking && <BookingBar />}
+      {!insideWizard && !onContactPage && <WhatsAppFab />}
 
       {/* Devuelve la página al lugar donde estaba al volver atrás, y arriba de
           todo al navegar a una página nueva. Sin esto, React Router deja la

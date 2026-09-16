@@ -5,12 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!--
-      Los valores de acá son los que ve un buscador o alguien que comparte el
-      link sin entrar al sitio. Cada página los reemplaza con los suyos propios
-      —React 19 los iza solo al `<head`— así que estos son el piso, no el techo.
+      Este `<head>` es el **armazón**: lo que se descarga antes de que React
+      arranque. El título y la descripción de verdad los pone `PageMeta` en cada
+      página, y React 19 los iza solo hasta acá.
 
-      El título nombra el rubro y la ciudad porque así busca la gente: nadie
-      escribe "KAYA KALPA" sin conocerla de antes.
+      El título de abajo nombra el rubro y la ciudad porque así busca la gente:
+      nadie escribe "KAYA KALPA" sin conocerla de antes. Es el que se ve en la
+      pestaña durante el instante previo al primer render.
+
+      POR QUÉ NO HAY `og:title` NI `og:description` ACÁ
+
+      Porque `PageMeta` los emite en todas las páginas, y React **agrega** las
+      etiquetas en vez de reemplazarlas: con las dos versiones puestas, el `<head>`
+      quedaba con dos `og:title` —el genérico de acá primero y el de la página
+      después— y quien lee la primera se queda con el genérico. Un `og:title` que
+      dice "Estética en Formosa" en la ficha de un tratamiento es peor que no
+      tenerlo.
+
+      Los tres que sí quedan —tipo, nombre del sitio e idioma— son iguales en todo
+      el sitio y `PageMeta` no los toca. Este `<head>` y el de `entry-server.tsx`
+      tienen que seguir siendo el mismo: son las dos caras del mismo documento.
     -->
     <title>KAYA KALPA Estética Profesional | Estética en Formosa</title>
     <meta
@@ -22,14 +36,6 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="KAYA KALPA Estética Profesional" />
     <meta property="og:locale" content="es_AR" />
-    <meta
-      property="og:title"
-      content="KAYA KALPA Estética Profesional | Estética en Formosa"
-    />
-    <meta
-      property="og:description"
-      content="Tratamientos faciales, corporales, manos, pies, pestañas y cejas en Formosa. Reservá tu turno online."
-    />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 

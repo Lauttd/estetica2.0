@@ -72,3 +72,21 @@ export function bookingStepIndex(pathname: string): number {
   const normalized = pathname.replace(/\/+$/, '') || '/';
   return BOOKING_STEPS.findIndex((step) => step.path === normalized);
 }
+
+/**
+ * Si una dirección es del mundo de los turnos —un paso, la confirmación o la
+ * consulta— sin importar en cuál de las tres está.
+ *
+ * Es más ancha que `bookingStepIndex` a propósito, y las dos hacen falta. El
+ * indicador de progreso y las flechas de "volver" quieren saber el **paso**, y
+ * para la confirmación devolver `-1` es la respuesta correcta: no es un paso. Lo
+ * que se pregunta acá es otra cosa —si la persona está en medio de un turno— y
+ * para eso la confirmación cuenta igual que el paso dos.
+ *
+ * Se compara con la barra para no llevarse por delante una dirección futura que
+ * empiece con las mismas letras, como `/turnos-especiales`.
+ */
+export function isBookingPath(pathname: string): boolean {
+  const normalized = pathname.replace(/\/+$/, '') || '/';
+  return normalized === PATHS.booking || normalized.startsWith(`${PATHS.booking}/`);
+}

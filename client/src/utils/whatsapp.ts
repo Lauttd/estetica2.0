@@ -65,3 +65,19 @@ export function buildMapsLink(query: string | null): string | null {
   if (query === null || query.trim().length === 0) return null;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
+
+/**
+ * El mapa para incrustar en la página, armado con la misma dirección.
+ *
+ * Es la forma vieja de Google —`output=embed`— y no la API de Maps Embed: esa
+ * última también necesita una clave, y una clave en el frontend es exactamente lo
+ * que el prompt prohíbe (§39). Esta no lleva ninguna.
+ *
+ * Va acá, al lado de `buildMapsLink`, porque los dos son enlaces externos armados
+ * a partir del mismo dato y separarlos garantizaría que un día uno codifique la
+ * dirección distinto que el otro.
+ */
+export function buildMapsEmbedUrl(query: string | null): string | null {
+  if (query === null || query.trim().length === 0) return null;
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+}

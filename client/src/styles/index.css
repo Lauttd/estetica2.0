@@ -76,6 +76,44 @@
 
   --shadow-card: 0 1px 2px rgb(35 48 31 / 0.04), 0 8px 24px rgb(35 48 31 / 0.06);
   --shadow-float: 0 4px 12px rgb(35 48 31 / 0.12), 0 12px 32px rgb(35 48 31 / 0.12);
+
+  /* ---------------------------------------------------------------------------
+     Animaciones
+     ---------------------------------------------------------------------------
+     §25 pide "animaciones suaves" en la galería y §36 las acota: nada que llame
+     más la atención que el contenido. Son dos, y las dos son de entrada: una para
+     lo que aparece en pantalla y una para el visor de una foto.
+
+     Van acá y no sueltas en cada componente porque son parte del sistema, no de
+     una pantalla: el día que otra sección quiera aparecer igual, usa la misma y
+     no una parecida escrita de nuevo.
+
+     El bloque `prefers-reduced-motion` de abajo las deja en 0,01 ms para quien
+     pidió menos movimiento: el contenido aparece igual, sin animarse. */
+  --animate-rise: rise 0.45s ease-out both;
+  --animate-zoom-in: zoom-in 0.22s ease-out both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes zoom-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 /* =============================================================================

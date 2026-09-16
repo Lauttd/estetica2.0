@@ -64,6 +64,41 @@ interface Attempt {
 /** Los códigos que crea esta prueba, para poder borrar exactamente esos. */
 const createdCodes = new Set<string>();
 
+/**
+ * Las clientas que crea esta prueba, para poder borrar exactamente esas.
+ *
+ * POR ID Y NO POR NOMBRE
+ *
+ * Esto era `deleteMany({ firstName: 'Prueba' })`, y estaba mal por dos motivos que
+ * se suman. El primero: `ui-flow.mjs` —la verificación del cliente— también carga
+ * clientas que se llaman "Prueba", así que esta limpieza se las llevaba puestas. El
+ * segundo: fallaba. Esas clientas ajenas tienen turnos que esta prueba no conoce y
+ * por lo tanto no borra, así que el `DELETE` moría con una violación de clave ajena
+ * y la verificación entera se cortaba antes de llegar a la mitad de lo que mide.
+ * Una verificación que se rompe por datos que no son suyos enseña a ignorarla.
+ *
+ * Se juntan de dos maneras porque se crean de dos maneras: las que inserta
+ * directamente esta prueba se anotan al crearlas, y las que crea la API no se
+ * pueden anotar —el servidor no devuelve el id de la clienta, y hace bien— así que
+ * se llega a ellas por los turnos que esta prueba reservó.
+ */
+const createdCustomerIds = new Set<string>();
+
+/**
+ * Todas las clientas que esta prueba creó, sumando todas las limpiezas.
+ *
+ * `createdCustomerIds` se vacía en cada limpieza —son las que hay que borrar
+ * ahora—, y esto es el acumulado: lo que la comprobación final cuenta para decir
+ * que no quedó nada. Se comprueba sobre el total y no sobre la última tanda porque
+ * las tandas anteriores también fueron clientas de esta prueba, y que la última
+ * haya quedado limpia no dice nada de ellas.
+ *
+ * Que exista además es lo que impide que la comprobación final pase por no haber
+ * mirado nada: contar sobre un conjunto vacío da cero sobrantes sin haber
+ * comprobado absolutamente nada.
+ */
+const allCreatedCustomerIds = new Set<string>();
+
 /** Los que inserta por SQL, que no pasan por la API y no se registran solos. */
 const SQL_CODES = ['SQLAAA', 'SQLBBB', 'SQLCCC', 'SQLDDD', 'SQLEEE'];
 
@@ -161,18 +196,40 @@ async function findOpenDay(
  *
  * A propósito NO se hace `deleteMany({})`: esta prueba corre contra la misma base
  * que el resto del desarrollo, y un borrado total se llevaría puestos los turnos
- * reales que alguien haya estado cargando a mano para probar. Se borra por código.
+ * reales que alguien haya estado cargando a mano para probar. Se borra por código
+ * de turno y por id de clienta, que son las dos cosas que esta prueba conoce con
+ * certeza porque las generó ella. Cualquier filtro por nombre —o por cualquier
+ * otro dato que otra cosa pueda compartir— borra también lo que no es suyo.
+ *
+ * Devuelve los ids de las clientas que borró, para que quien llama pueda
+ * comprobar que efectivamente no quedó ninguna.
  */
-async function cleanup(): Promise<void> {
+async function cleanup(): Promise<string[]> {
   const codes = [
     ...SQL_CODES,
     ...[...createdCodes].map((code) => code.replace(/^KK-/, '')),
   ];
 
+  // Las clientas detrás de los turnos de esta prueba. Se juntan ANTES de borrar
+  // los turnos: después ya no habría forma de llegar a ellas.
+  const behindBookings = await prisma.booking.findMany({
+    where: { code: { in: codes } },
+    select: { customerId: true },
+    distinct: ['customerId'],
+  });
+  for (const row of behindBookings) createdCustomerIds.add(row.customerId);
+
+  const customers = [...createdCustomerIds];
+
   await prisma.booking.deleteMany({ where: { code: { in: codes } } });
-  // Solo las clientas de prueba: nunca se borra una clienta real.
-  await prisma.customer.deleteMany({ where: { firstName: 'Prueba' } });
+  await prisma.customer.deleteMany({ where: { id: { in: customers } } });
+
+  for (const id of customers) allCreatedCustomerIds.add(id);
+
   createdCodes.clear();
+  createdCustomerIds.clear();
+
+  return customers;
 }
 
 async function main(): Promise<void> {
@@ -394,6 +451,10 @@ async function main(): Promise<void> {
     const customer = await prisma.customer.create({
       data: { firstName: 'Prueba', lastName: 'SQL', phone: '3705000099' },
     });
+    // Anotada para poder borrarla: es una clienta que no tiene turnos que la
+    // delaten —los `INSERT` de abajo se borran por código, no por clienta— así que
+    // si no se anota acá, `cleanup()` no tendría forma de llegar a ella.
+    createdCustomerIds.add(customer.id);
 
     const base = {
       customerId: customer.id,
@@ -478,9 +539,10 @@ async function main(): Promise<void> {
     // Un turno del mismo horario pero de OTRO profesional tiene que entrar: el
     // constraint es por profesional, no global.
     //
-    // Las clientas se crean DESPUÉS del `cleanup`, no antes: la limpieza borra
-    // todas las fichas 'Prueba', así que una creada antes quedaría borrada y el
-    // `INSERT` fallaría por clave foránea en vez de por lo que se quiere medir.
+    // Las clientas se crean DESPUÉS del `cleanup`, no antes: la limpieza se lleva
+    // las clientas que esta prueba anotó, así que una creada antes quedaría
+    // borrada y los `INSERT` de acá abajo morirían por clave foránea en vez de por
+    // lo que se quiere medir.
     await cleanup();
 
     const secondProfessional = await prisma.professional.findFirst({
@@ -497,6 +559,8 @@ async function main(): Promise<void> {
           data: { firstName: 'Prueba', lastName: 'SQL2', phone: '3705000098' },
         }),
       ]);
+      createdCustomerIds.add(customerA.id);
+      createdCustomerIds.add(customerB.id);
 
       const window = {
         date: new Date(`${date}T00:00:00.000Z`),
@@ -540,10 +604,25 @@ async function main(): Promise<void> {
     await cleanup();
 
     const leftovers = await prisma.booking.count({ where: { code: { in: SQL_CODES } } });
-    const testCustomers = await prisma.customer.count({ where: { firstName: 'Prueba' } });
+
+    /**
+     * Las clientas se cuentan por id y no por nombre.
+     *
+     * Por nombre se contaban las de `ui-flow.mjs` —que también se llama "Prueba"
+     * su clienta de prueba—, y entonces esta comprobación fallaba por datos ajenos
+     * que esta prueba ni creó ni tiene por qué limpiar. Por id se cuenta
+     * exactamente lo que esta corrida creó, que es lo único que puede decir si la
+     * limpieza funcionó.
+     */
+    const testCustomers = await prisma.customer.count({
+      where: { id: { in: [...allCreatedCustomerIds] } },
+    });
     check(
       `No quedaron datos de la prueba (${leftovers} turnos, ${testCustomers} clientas)`,
-      leftovers === 0 && testCustomers === 0,
+      leftovers === 0 && testCustomers === 0 && allCreatedCustomerIds.size > 0,
+      allCreatedCustomerIds.size === 0
+        ? 'Esta corrida no creó ninguna clienta: la comprobación no miró nada.'
+        : `Se crearon y borraron ${allCreatedCustomerIds.size} clientas.`,
     );
   } catch (error) {
     fail += 1;

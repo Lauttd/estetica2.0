@@ -16,6 +16,11 @@ import { buildWhatsAppLink } from '@/utils/whatsapp';
  * · **El `aria-label` empieza con la acción**, no con "WhatsApp": quien usa un
  *   lector de pantalla necesita saber qué pasa si lo toca, y "WhatsApp" a secas
  *   no dice si es para escribir, para llamar o para compartir.
+ * · **En el teléfono flota por encima de la barra de reserva** (`bottom-20` en vez
+ *   de `bottom-4`). Desde la Fase 3 esa barra ocupa la franja de abajo (§33), y
+ *   sin levantarlo el botón quedaría encima del de reservar: los dos son fijos y
+ *   los dos viven en la misma esquina. Desde `sm` la barra no existe y el botón
+ *   vuelve al borde.
  */
 export function WhatsAppFab() {
   const { data: settings } = useSiteSettings();
@@ -33,7 +38,7 @@ export function WhatsAppFab() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escribir por WhatsApp"
-      className="bg-forest hover:bg-forest-dark fixed right-4 bottom-4 z-30 inline-flex items-center gap-2 rounded-full py-3 pr-5 pl-4 text-ivory shadow-float transition-colors duration-150 sm:right-6 sm:bottom-6"
+      className="bg-forest hover:bg-forest-dark fixed right-4 bottom-20 z-30 inline-flex items-center gap-2 rounded-full py-3 pr-5 pl-4 text-ivory shadow-float transition-colors duration-150 sm:right-6 sm:bottom-6"
     >
       <WhatsAppIcon />
       <span className="text-sm font-medium">Escribinos</span>

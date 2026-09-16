@@ -26,6 +26,16 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
 
+  /**
+   * El mismo `.env` de la raíz que en `vite.config.ts`, y por una razón que no es
+   * la simetría: este build genera el HTML que ve un buscador.
+   *
+   * Si acá la variable no se leyera, el `canonical` saldría en el HTML que arma el
+   * navegador y no en el que se escribe en el build. Serían dos documentos distintos
+   * para la misma dirección, y el que se indexa es justamente el segundo.
+   */
+  envDir: '..',
+
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

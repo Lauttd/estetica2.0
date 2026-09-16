@@ -8,6 +8,7 @@ import {
   BookingNotFound,
 } from '@/components/booking/BookingDetailView';
 import { getCancelToken } from '@/booking/cancel-tokens';
+import { useBookingArrival } from '@/booking/useBookingArrival';
 import { useBookingCancel } from '@/booking/useBookingCancel';
 import { ApiError } from '@/api/client';
 import { useBookingByCode } from '@/queries/bookings.queries';
@@ -29,9 +30,18 @@ import { PATHS } from '@/routes/paths';
  * La dirección cuelga de `/turnos` pero sin indicador de pasos ni barra: quien
  * llega acá ya reservó, y seguir mostrándole "paso 6 de 6" le haría pensar que
  * todavía le falta algo.
+ *
+ * TAMPOCO ES SOLO UNA PANTALLA QUE MUESTRA
+ *
+ * Si la visita viene de reservar, acá se deshace el trabajo del asistente: el
+ * carrito y el borrador se descartan al llegar. No puede hacerlo `useBookingSubmit`
+ * —ver `booking.arrival.ts`—, así que la pantalla que cierra el recorrido es
+ * también la que lo da por terminado.
  */
 export function BookingConfirmedPage() {
   const { code = '' } = useParams<{ code: string }>();
+
+  useBookingArrival();
 
   // El token está guardado porque esta pantalla se abre inmediatamente después de
   // reservar. Si por algún motivo no estuviera, la consulta se hace igual y el

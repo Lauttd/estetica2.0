@@ -75,13 +75,17 @@ Horarios, sin tocar código ni volver a desplegar.
 ## 5. Fotos — la galería arranca con placeholders
 
 La galería tiene 8 filas cargadas apuntando a cuatro SVG botánicos en la paleta de
-la marca. **Los archivos todavía no existen**: hay que crearlos en
-`client/public/images/gallery/placeholder-{1..4}.svg` o reemplazar las filas por
-las fotos reales.
+la marca, en `client/public/images/gallery/placeholder-{1..4}.svg`. Los cuatro
+dibujos ya están hechos: son ilustraciones a línea, no fotos, y se distinguen a
+simple vista de un trabajo real.
 
-Hasta entonces `gallery_is_placeholder = 'true'` y la galería se muestra con el
-aviso correspondiente. `prompt.md` §6 pide explícitamente no usar fotos genéricas
-de baja calidad, así que no se buscaron imágenes de stock.
+`gallery_is_placeholder = 'true'`, así que la galería se muestra con el aviso de que
+las fotos están a confirmar, y **la página no afirma que esos dibujos sean
+trabajos de la estética**. `prompt.md` §6 pide explícitamente no usar fotos
+genéricas de calidad baja, así que no se buscaron imágenes de stock.
+
+El reemplazo es por base de datos: se cambia el `src` de cada fila por la foto real
+y se apaga la bandera. La galería no se administra desde el panel (ver el punto 9).
 
 **A confirmar:** las fotos reales de trabajos, con la autorización de las clientas
 que aparezcan.
@@ -204,3 +208,53 @@ mostraría con la moneda nueva.
 **Arreglo:** agregar `currencySnapshot` a `BookingService` (o devolver la moneda
 en `BookingServiceLine`) y que el cliente la lea de ahí. Requiere migración.
 Mientras tanto, si se carga un servicio en otra moneda, arreglar esto **antes**.
+
+---
+
+## 13. El dominio del sitio no está definido
+
+§37 pide Open Graph, y dos de esas etiquetas —el `canonical` y el `og:image`— tienen
+que ser **direcciones absolutas**: quien las lee es el servidor de WhatsApp o de
+Facebook, que no tiene forma de saber desde qué página se compartió el enlace.
+
+El dominio todavía no está. Lo único que se sabe es que **no** es
+`localhost:5173`, y un dominio inventado en un `canonical` es peor que no tener
+`canonical`: le dice al buscador que la página buena vive en otro lado.
+
+Mientras tanto el sitio no emite ninguna de las dos, y eso está bien: la vista
+previa de un enlace compartido sale con el título y la descripción, que es lo que
+WhatsApp —el canal por el que más se va a compartir esto— muestra igual.
+
+**Para activarlas** alcanza con cargar una línea en el `.env` de la raíz:
+
+```
+VITE_SITE_URL=https://kayakalpa.com.ar
+```
+
+Con protocolo y sin barra final (la barra se saca sola si está). A partir de ahí,
+cada página emite su `canonical` y, cuando el servicio tenga foto cargada, su
+`og:image`. El `og:image` de la ficha de un servicio sale de `Service.image`, que
+hoy está en `null` para todo el catálogo: se completa desde `/admin`.
+
+**A confirmar:** el dominio definitivo. Depende de dónde se despliegue (ver el
+punto 10).
+
+---
+
+## 14. El mapa de Google y la política de seguridad del contenido
+
+La página de contacto muestra un mapa con el iframe `output=embed` de Google Maps.
+Es la variante que **no pide clave de API**, que es lo que §39 exige: ninguna
+credencial en el frontend.
+
+El costo es una dependencia de terceros que hay que declarar cuando se escriba la
+política de seguridad del contenido (Fase 9):
+
+```
+frame-src https://www.google.com;
+```
+
+Sin esa línea el navegador bloquea el iframe y el mapa queda en blanco, sin ningún
+error visible más que un mensaje en la consola del navegador. Si el día de mañana
+la estética prefiere no depender de Google, la alternativa es una imagen estática
+del mapa con un enlace para abrirlo, que no necesita ninguna regla.

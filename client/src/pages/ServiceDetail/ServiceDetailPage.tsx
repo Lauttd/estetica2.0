@@ -67,6 +67,11 @@ export function ServiceDetailPage() {
            que cualquier frase armada acá. Se le suma la duración cuando existe,
            que es el dato que más se consulta antes de reservar. */
         description={`${detail.shortDescription} ${formatDurationOrPending(detail.durationMin)}. Reservá tu turno en KAYA KALPA Estética Profesional.`}
+        /* La foto del tratamiento, cuando la estética la haya cargado: es la
+           imagen que le pone cara al enlace cuando alguien lo comparte. Hoy
+           `Service.image` está en `null` para todo el catálogo, así que no se
+           emite ninguna; el día que se cargue desde el panel, sale sola. */
+        image={detail.image}
       />
 
       <div className="container-page pb-20">

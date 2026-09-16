@@ -218,6 +218,11 @@ export async function render(
           prerenderizar. Son las dos caras del mismo documento y hay que
           mantenerlas iguales: la de acá es la que ve un buscador, la de
           `index.html` la que ve alguien navegando.
+
+          El título, la descripción y las etiquetas `og:` de la página **no** van
+          acá: las pone `PageMeta` desde el fondo del árbol y React las iza hasta
+          este `<head>`. Escribirlas también acá las duplicaría, y la primera es la
+          que gana.
         */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="KAYA KALPA Estética Profesional" />
