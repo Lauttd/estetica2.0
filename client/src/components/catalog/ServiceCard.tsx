@@ -5,7 +5,6 @@ import { ServiceImage } from './ServiceImage';
 import { buttonStyles } from '@/components/ui/button';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { PATHS } from '@/routes/paths';
-import { formatDurationOrPending } from '@/utils/format';
 import { buildServiceEnquiryLink } from '@/utils/whatsapp';
 import type { ServiceSummary } from '@/types/service';
 
@@ -92,9 +91,6 @@ export function ServiceCard({ service, iconName, onDetails, action }: ServiceCar
 
         <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-beige pt-4">
           <PriceTag service={service} />
-          <span className="text-sm text-ink-soft">
-            {formatDurationOrPending(service.durationMin)}
-          </span>
         </div>
 
         {/* `mt-auto` empuja los botones al pie para que queden alineados entre

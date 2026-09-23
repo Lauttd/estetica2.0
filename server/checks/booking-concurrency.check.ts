@@ -177,6 +177,7 @@ async function findOpenDay(
   for (let offset = 0; offset < 56; offset += 1) {
     const candidate = new Date(target);
     candidate.setDate(candidate.getDate() + offset);
+    if (candidate.getDay() === 0 || candidate.getDay() === 6) continue;
     const dateOnly = toDateOnly(candidate);
 
     const availability = await getJson<{ slots: Array<{ startMin: number }> }>(

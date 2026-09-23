@@ -1,10 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { useCart } from '@/cart/useCart';
-import { bookingParamsFrom } from '@/booking/booking.params';
-import { availabilityQueryOptions } from '@/queries/availability.queries';
 import { buttonStyles } from '@/components/ui/button';
-import { formatDuration } from '@/utils/format';
 import { DEFAULT_CURRENCY, formatPrice, sumKnownPrices } from '@/utils/money';
 
 interface CartBarProps {
@@ -44,26 +40,7 @@ interface CartBarProps {
  */
 export function CartBar({ nextPath, nextLabel }: CartBarProps) {
   const cart = useCart();
-  const location = useLocation();
-
-  const params = bookingParamsFrom(location.search);
-
-  const availability = useQuery({
-    ...availabilityQueryOptions({
-      serviceIds: cart.items.map((item) => item.serviceId),
-      // El día real, o cadena vacía. Con `enabled: false` abajo, la consulta nunca
-      // se ejecuta: solo se usa para leer de la caché la respuesta que ya está
-      // guardada bajo esa clave, la misma que dejó el paso de horario.
-      date: params.date ?? '',
-      professionalId: params.professionalId ?? undefined,
-    }),
-    enabled: false,
-  });
-
   if (cart.count === 0) return null;
-
-  const totalDurationMin =
-    params.date === null ? null : (availability.data?.totalDurationMin ?? null);
 
   const partialPrice = sumKnownPrices(cart.items.map((item) => item.priceCents));
   const currency = cart.items[0]?.currency ?? DEFAULT_CURRENCY;
@@ -81,10 +58,6 @@ export function CartBar({ nextPath, nextLabel }: CartBarProps) {
           </p>
 
           <p className="truncate text-xs text-ink-soft">
-            {totalDurationMin !== null && (
-              <span>{formatDuration(totalDurationMin)}</span>
-            )}
-            {totalDurationMin !== null && partialPrice !== null && <span> · </span>}
             {partialPrice !== null && (
               <span>
                 {formatPrice(partialPrice, currency)}

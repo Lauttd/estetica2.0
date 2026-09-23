@@ -44,6 +44,7 @@ import {
 } from './availability.engine';
 import { availabilityRepository } from './availability.repository';
 import type { AvailabilityQuery, AvailabilityResult } from './availability.types';
+import { DEFAULT_BOOKING_DURATION_MIN } from '../shared/booking-policy';
 
 /** Lo mínimo para calcular: qué servicios, para qué día y para quién. */
 export interface SlotRequest {
@@ -87,9 +88,9 @@ interface DayPlan {
 /**
  * Comprueba que los servicios existan, estén activos y se puedan reservar online.
  *
- * Devuelve la duración total del turno, que es lo que el motor usa para saber si
- * un horario entra. Un servicio sin duración cargada no se puede agendar: no hay
- * forma de saber cuándo termina, así que se rechaza en vez de asumir un valor.
+ * Todos los servicios ocupan un turno estándar. La duración no se muestra ni se
+ * carga por servicio; el motor necesita igualmente un intervalo para proteger la
+ * agenda contra solapamientos.
  */
 async function resolveDuration(serviceIds: string[], db: Db): Promise<number> {
   // Se descartan los repetidos antes de consultar: si el cliente manda dos veces
@@ -103,18 +104,17 @@ async function resolveDuration(serviceIds: string[], db: Db): Promise<number> {
     );
   }
 
-  const durations = services.map((service) => {
-    if (!service.bookable || !service.durationMin) {
+  services.forEach((service) => {
+    if (!service.bookable) {
       throw new AppError(
         400,
         ErrorCode.SERVICE_NOT_BOOKABLE,
-        `"${service.name}" todavía no se puede reservar online. Escribinos por WhatsApp y lo coordinamos.`,
+        `"${service.name}" no está disponible para reservar online.`,
       );
     }
-    return service.durationMin;
   });
 
-  return durations.reduce((total, minutes) => total + minutes, 0);
+  return DEFAULT_BOOKING_DURATION_MIN;
 }
 
 /**
@@ -205,6 +205,17 @@ function buildAgenda(professional: ProfessionalRow, day: DayData): ProfessionalA
 async function planDay(request: SlotRequest, db: Db): Promise<DayPlan> {
   const totalDurationMin = await resolveDuration(request.serviceIds, db);
   const daysAhead = daysAheadWithinWindow(request.date);
+  const requestedWeekday = weekdayOf(parseDateOnly(request.date));
+
+  if (requestedWeekday === 0 || requestedWeekday === 6) {
+    return {
+      date: request.date,
+      totalDurationMin,
+      closed: true,
+      slots: [],
+      matchedProfessionals: 0,
+    };
+  }
 
   const professionals = await availabilityRepository.findProfessionalsForServices(
     request.serviceIds,
@@ -243,7 +254,7 @@ async function planDay(request: SlotRequest, db: Db): Promise<DayPlan> {
   // Las cuatro consultas van juntas: son independientes entre sí y en serie
   // sumarían cuatro veces la latencia de la base.
   const [hours, blockedDates, blockedTimes, bookings] = await Promise.all([
-    availabilityRepository.findBusinessHours(professionalIds, weekdayOf(target), db),
+    availabilityRepository.findBusinessHours(professionalIds, requestedWeekday, db),
     availabilityRepository.findBlockedDates(target, professionalIds, db),
     availabilityRepository.findBlockedTimes(target, professionalIds, db),
     availabilityRepository.findBusyBookings(target, professionalIds, db),

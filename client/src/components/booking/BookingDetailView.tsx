@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { buttonStyles } from '@/components/ui/button';
 import { PATHS } from '@/routes/paths';
-import { formatDuration, formatLongDateOnly } from '@/utils/format';
+import { formatLongDateOnly } from '@/utils/format';
 import { DEFAULT_CURRENCY, formatPrice } from '@/utils/money';
 import type { BookingDetail, BookingStatus } from '@/types/booking';
 
@@ -64,10 +64,7 @@ export function BookingDetailView({
         <p className="mt-3 text-lg text-deep">
           {formatLongDateOnly(booking.date)}
         </p>
-        <p className="text-sm text-ink-soft">
-          De {booking.startTime} a {booking.endTime} ·{' '}
-          {formatDuration(booking.totalDurationMin)}
-        </p>
+        <p className="text-sm text-ink-soft">A las {booking.startTime}</p>
 
         <p className="mt-4 text-sm text-ink">
           Te atiende <strong className="font-medium">{booking.professional.name}</strong>.
@@ -87,9 +84,6 @@ export function BookingDetailView({
             >
               <span className="min-w-0">
                 <span className="block text-sm text-ink">{line.name}</span>
-                <span className="text-xs text-ink-soft">
-                  {formatDuration(line.durationMin)}
-                </span>
               </span>
               <span className="shrink-0 text-sm text-ink">
                 {formatPrice(line.priceCents, currency)}

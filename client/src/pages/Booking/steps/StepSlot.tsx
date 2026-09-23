@@ -8,7 +8,7 @@ import { bookingParamsFrom, bookingPathWith } from '@/booking/booking.params';
 import { useAvailability } from '@/queries/availability.queries';
 import { PATHS } from '@/routes/paths';
 import { cn } from '@/utils/cn';
-import { formatDuration, formatLongDateOnly } from '@/utils/format';
+import { formatLongDateOnly } from '@/utils/format';
 import type { AvailabilitySlot } from '@/types/booking';
 
 /**
@@ -111,10 +111,6 @@ export function StepSlot() {
 
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-ink-soft">
-          <span>
-            Duración del turno:{' '}
-            {result === undefined ? '…' : formatDuration(result.totalDurationMin)}
-          </span>
           <Link
             to={changeDayPath}
             className="text-forest underline decoration-forest/30 underline-offset-4 transition-colors duration-150 hover:decoration-forest"

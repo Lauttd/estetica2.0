@@ -10,6 +10,7 @@ import {
   formatDayOfMonth,
   formatLongDateOnly,
   formatWeekdayShort,
+  isWeekend,
   todayDateOnly,
 } from '@/utils/format';
 
@@ -108,6 +109,7 @@ export function StepDate() {
               <li key={day} className="shrink-0 sm:shrink">
                 <DayChip
                   date={day}
+                  disabled={isWeekend(day)}
                   // "Hoy" y "mañana" se nombran; del tercero en adelante el día de
                   // la semana alcanza y el nombre completo sería más largo que el
                   // botón.
@@ -164,6 +166,7 @@ interface DayChipProps {
   /** El nombre con el que se reemplaza al día de la semana, si lo hay. */
   label: string | undefined;
   selected: boolean;
+  disabled: boolean;
   onSelect: () => void;
 }
 
@@ -176,20 +179,23 @@ interface DayChipProps {
  * quien usa un lector de pantalla no tiene el contexto de la fila para completar
  * "jue".
  */
-function DayChip({ date, label, selected, onSelect }: DayChipProps) {
+function DayChip({ date, label, selected, disabled, onSelect }: DayChipProps) {
   const full = formatLongDateOnly(date);
 
   return (
     <button
       type="button"
       onClick={onSelect}
+      disabled={disabled}
       aria-pressed={selected}
       aria-label={full}
       className={cn(
         'flex w-16 flex-col items-center gap-0.5 rounded-soft border px-3 py-2.5 transition-colors duration-150 sm:w-full',
         selected
           ? 'border-forest bg-forest text-ivory'
-          : 'border-beige bg-ivory text-ink hover:border-sage',
+          : disabled
+            ? 'cursor-not-allowed border-beige bg-beige/40 text-ink-soft line-through'
+            : 'border-beige bg-ivory text-ink hover:border-sage',
       )}
     >
       <span

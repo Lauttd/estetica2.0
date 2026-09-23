@@ -31,6 +31,7 @@ import { serviceRepository } from '../services/services.repository';
 import { formatBookingCode, normalizeBookingCode } from './booking-code';
 import { bookingRepository, type BookingWrite } from './bookings.repository';
 import type { BookingDetail, CreateBookingInput } from './bookings.types';
+import { DEFAULT_BOOKING_DURATION_MIN } from '../shared/booking-policy';
 
 /** Cuántas veces se reintenta si el código generado choca con uno existente. */
 const CODE_RETRIES = 3;
@@ -105,10 +106,7 @@ function buildWrite(args: {
   const target = parseDateOnly(input.date);
   const startAt = zonedTimeToInstant(target, input.startMin);
 
-  const totalDurationMin = services.reduce(
-    (total, service) => total + (service.durationMin ?? 0),
-    0,
-  );
+  const totalDurationMin = DEFAULT_BOOKING_DURATION_MIN;
   const endAt = addMinutes(startAt, totalDurationMin);
   const occupiedUntil = addMinutes(endAt, bufferMin);
 
@@ -135,7 +133,7 @@ function buildWrite(args: {
       serviceId: service.id,
       nameSnapshot: service.name,
       priceCentsSnapshot: service.priceCents,
-      durationMinSnapshot: service.durationMin ?? 0,
+      durationMinSnapshot: DEFAULT_BOOKING_DURATION_MIN,
       sortOrder: service.sortOrder ?? index,
     })),
   };

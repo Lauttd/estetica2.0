@@ -91,6 +91,14 @@ export function formatWeekdayShort(value: string): string {
   return parsed === null ? value : weekdayFormatter.format(parsed);
 }
 
+/** Los turnos online solo se ofrecen de lunes a viernes. */
+export function isWeekend(value: string): boolean {
+  const parsed = parseDateOnly(value);
+  if (parsed === null) return false;
+  const day = parsed.getDay();
+  return day === 0 || day === 6;
+}
+
 /** El número del día solo: `"15"`. Va debajo del día de la semana en el botón. */
 export function formatDayOfMonth(value: string): string {
   const parsed = parseDateOnly(value);

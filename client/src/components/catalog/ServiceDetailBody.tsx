@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { formatDurationOrPending } from '@/utils/format';
 import type { ServiceDetail } from '@/types/service';
 
 interface ServiceDetailBodyProps {
@@ -88,14 +87,7 @@ export function ServiceDetailBody({ service, actions }: ServiceDetailBodyProps) 
         </p>
       )}
 
-      <dl className="grid grid-cols-2 gap-4 border-t border-beige pt-6">
-        <div>
-          <dt className="text-xs tracking-wider text-olive uppercase">Duración</dt>
-          <dd className="mt-1 text-sm text-ink">
-            {formatDurationOrPending(service.durationMin)}
-          </dd>
-        </div>
-
+      <dl className="grid grid-cols-1 gap-4 border-t border-beige pt-6">
         {service.subgroup !== null && (
           <div>
             <dt className="text-xs tracking-wider text-olive uppercase">Grupo</dt>

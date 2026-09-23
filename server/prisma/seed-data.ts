@@ -214,7 +214,7 @@ export const CATALOG: SeedCategory[] = [
         durationMin: null,
         pricePesos: 78000,
         subgroup: 'Paquetes',
-        bookable: false, // se coordina aparte, no es un turno suelto
+        bookable: true,
       },
       {
         slug: 'manta-termica',
@@ -226,7 +226,7 @@ export const CATALOG: SeedCategory[] = [
         durationMin: null,
         pricePesos: 110000,
         subgroup: 'Paquetes',
-        bookable: false,
+        bookable: true,
       },
     ],
   },

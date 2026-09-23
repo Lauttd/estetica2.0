@@ -9,11 +9,8 @@ import { ServiceImage } from '@/components/catalog/ServiceImage';
 import { ApiError } from '@/api/client';
 import { serviceDetailQueryOptions } from '@/queries/services.queries';
 import { categoriesQueryOptions } from '@/queries/categories.queries';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { PATHS } from '@/routes/paths';
 import { CATALOG_PARAMS } from '@/routes/search-params';
-import { buildServiceEnquiryLink } from '@/utils/whatsapp';
-import { formatDurationOrPending } from '@/utils/format';
 
 /**
  * La ficha de un servicio.
@@ -36,7 +33,6 @@ export function ServiceDetailPage() {
   });
 
   const categories = useQuery(categoriesQueryOptions());
-  const { data: settings } = useSiteSettings();
 
   if (service.isPending) {
     return <DetailSkeleton />;
@@ -53,12 +49,6 @@ export function ServiceDetailPage() {
     categories.data?.find((category) => category.slug === detail.category.slug)?.icon ??
     null;
 
-  const enquiryLink = buildServiceEnquiryLink(
-    settings?.contact.whatsappNumber ?? null,
-    detail.name,
-    settings?.contact.whatsappMessage ?? null,
-  );
-
   return (
     <>
       <PageMeta
@@ -66,7 +56,7 @@ export function ServiceDetailPage() {
         /* La descripción corta es la de la estética y describe el servicio mejor
            que cualquier frase armada acá. Se le suma la duración cuando existe,
            que es el dato que más se consulta antes de reservar. */
-        description={`${detail.shortDescription} ${formatDurationOrPending(detail.durationMin)}. Reservá tu turno en KAYA KALPA Estética Profesional.`}
+        description={`${detail.shortDescription} Reservá tu turno en KAYA KALPA Estética Profesional.`}
         /* La foto del tratamiento, cuando la estética la haya cargado: es la
            imagen que le pone cara al enlace cuando alguien lo comparte. Hoy
            `Service.image` está en `null` para todo el catálogo, así que no se
@@ -98,41 +88,15 @@ export function ServiceDetailPage() {
 
             <div className="mt-8 flex flex-wrap items-baseline gap-x-6 gap-y-2">
               <PriceTag service={detail} className="text-3xl" />
-              <span className="text-sm text-ink-soft">
-                {formatDurationOrPending(detail.durationMin)}
-              </span>
             </div>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              {detail.bookableOnline ? (
-                <Link
-                  to={PATHS.booking}
-                  className={buttonStyles({ size: 'lg', className: 'sm:flex-1' })}
-                >
-                  Reservar turno
-                </Link>
-              ) : (
-                <>
-                  {/* Sin duración confirmada el servidor no agenda este servicio,
-                      así que no se ofrece un botón de reservar que va a fallar. Se
-                      explica por qué y se ofrece el canal que sí funciona. */}
-                  <p className="text-sm text-ink-soft sm:flex-1">
-                    Este tratamiento se coordina por WhatsApp: todavía estamos
-                    confirmando cuánto dura.
-                  </p>
-
-                  {enquiryLink !== null && (
-                    <a
-                      href={enquiryLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={buttonStyles({ size: 'lg' })}
-                    >
-                      Consultar
-                    </a>
-                  )}
-                </>
-              )}
+              <Link
+                to={PATHS.booking}
+                className={buttonStyles({ size: 'lg', className: 'sm:flex-1' })}
+              >
+                Reservar turno
+              </Link>
             </div>
           </div>
         </div>

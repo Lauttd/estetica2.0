@@ -8,9 +8,8 @@ import { useBooking } from '@/booking/useBooking';
 import { useBookingSubmit } from '@/booking/useBookingSubmit';
 import { bookingParamsFrom, bookingPathWith } from '@/booking/booking.params';
 import { useProfessionals } from '@/queries/professionals.queries';
-import { useAvailability } from '@/queries/availability.queries';
 import { PATHS } from '@/routes/paths';
-import { formatDuration, formatLongDateOnly } from '@/utils/format';
+import { formatLongDateOnly } from '@/utils/format';
 import { DEFAULT_CURRENCY, formatPrice, sumKnownPrices } from '@/utils/money';
 
 /**
@@ -52,15 +51,6 @@ export function StepSummary() {
    * clave de caché que dejó el paso de horario, así que en el caso normal —llegar
    * derecho desde ahí— no hay ninguna petición nueva.
    */
-  const availability = useAvailability(
-    {
-      serviceIds,
-      date: params.date ?? '',
-      professionalId: params.professionalId ?? undefined,
-    },
-    params.date !== null && serviceIds.length > 0,
-  );
-
   // El nombre de quien atiende. La lista es la misma que se mostró en el paso del
   // profesional, así que en el recorrido normal ya está en caché.
   const professionals = useProfessionals(serviceIds);
@@ -106,9 +96,6 @@ export function StepSummary() {
               <li key={item.serviceId} className="flex items-baseline justify-between gap-4">
                 <span className="min-w-0">
                   <span className="block text-sm text-ink">{item.name}</span>
-                  <span className="text-xs text-ink-soft">
-                    {formatDuration(item.durationMin)}
-                  </span>
                 </span>
                 <span className="shrink-0 text-sm text-ink">
                   {formatPrice(item.priceCents, item.currency)}
@@ -120,11 +107,7 @@ export function StepSummary() {
           <div className="mt-4 flex items-baseline justify-between border-t border-beige pt-4">
             {/* Mientras la respuesta no está, un puntos suspensivos y no un cero:
                 "0 min" sería un dato, y el dato todavía no llegó. */}
-            <span className="text-sm font-medium text-deep">
-              {availability.data === undefined
-                ? '…'
-                : formatDuration(availability.data.totalDurationMin)}
-            </span>
+            <span className="text-sm font-medium text-deep">Total</span>
             <span className="text-base font-medium text-deep">
               {partialPrice === null ? (
                 <span className="text-ink-soft">Precio a consultar</span>

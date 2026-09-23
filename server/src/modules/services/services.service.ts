@@ -30,8 +30,8 @@ import type { CreateServiceBody, UpdateServiceBody } from './services.validation
  * duración cargada. Sin duración no hay forma de saber cuánto ocupa en la
  * agenda, y el prompt §41 prohíbe inventarla.
  */
-function isBookableOnline(bookable: boolean, durationMin: number | null): boolean {
-  return bookable && durationMin !== null && durationMin > 0;
+function isBookableOnline(bookable: boolean, _durationMin: number | null): boolean {
+  return bookable;
 }
 
 /**

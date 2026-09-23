@@ -55,7 +55,6 @@ async function seedCatalog() {
       // Un servicio necesita duración y precio confirmados. Lo que falte se
       // marca para que el panel lo liste y la estética lo complete.
       const missing: string[] = [];
-      if (service.durationMin === null) missing.push('duración');
       if (service.pricePesos === null) missing.push('precio');
 
       const data = {
@@ -97,7 +96,7 @@ async function seedProfessionals() {
   // servicios y horarios desde el panel. Ambos quedan habilitados para todos
   // los servicios agendables, para que el flujo de reserva funcione ya.
   const bookableServices = await prisma.service.findMany({
-    where: { active: true, bookable: true, durationMin: { not: null } },
+    where: { active: true, bookable: true },
     select: { id: true },
   });
 
@@ -269,9 +268,8 @@ async function main() {
   if (needsReview.length > 0) {
     console.log(
       '\n  ⚠  DATOS A CONFIRMAR CON LA ESTÉTICA' +
-        '\n     Estos servicios quedaron sin precio o sin duración porque no figuran' +
+        '\n     Estos servicios quedaron sin precio porque no figura en la información' +
         '\n     ni en el prompt ni en la lista de precios. No se inventaron: los' +
-        '\n     servicios sin duración no se pueden agendar online hasta cargarla.' +
         '\n     Se completan desde el panel administrativo.\n',
     );
     for (const item of needsReview) {
