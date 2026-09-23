@@ -109,6 +109,11 @@ export function getCancelToken(code: string): string | null {
   return readStore()[code] ?? null;
 }
 
+/** Los códigos de los turnos reservados desde este navegador, del más reciente al más antiguo. */
+export function getRememberedBookingCodes(): string[] {
+  return Object.keys(readStore()).reverse();
+}
+
 /** Olvida el token de un turno. Se llama al cancelarlo: ya no sirve para nada. */
 export function forgetCancelToken(code: string): void {
   const store = readStore();

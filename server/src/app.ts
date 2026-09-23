@@ -10,6 +10,8 @@
 // =============================================================================
 
 import express, { type Express } from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -153,9 +155,28 @@ export function createApp(): Express {
   // Cierre de la cadena
   // ---------------------------------------------------------------------------
 
-  // Cuando la SPA se sirva desde este proceso, su fallback va acá: devolver
-  // index.html para las rutas del router de React, excluyendo /api. Tiene que
-  // quedar después de las rutas de la API y antes de `notFound`.
+  // En producción el mismo proceso sirve el cliente compilado. En desarrollo,
+  // Vite sigue ocupando el puerto del frontend y este bloque simplemente no
+  // encuentra `client/dist`.
+  const clientDist = path.resolve(__dirname, '../../client/dist');
+  const clientIndex = path.join(clientDist, 'index.html');
+  if (fs.existsSync(clientIndex)) {
+    app.use(express.static(clientDist, { index: false }));
+    app.use((req, res, next) => {
+      if (req.path.startsWith('/api')) {
+        next();
+        return;
+      }
+      res.sendFile(clientIndex);
+    });
+  } else if (env.isProduction) {
+    logger.error(
+      { clientDist },
+      'No se encontró el cliente compilado. Ejecutá npm run build antes de npm start.',
+    );
+  }
+
+  // El fallback queda después de las rutas de la API y antes de `notFound`.
   //
   // Ojo con Express 5: `app.get('*', ...)` ya no es válido (path-to-regexp v8
   // rechaza el asterisco suelto). Va como middleware sin path.

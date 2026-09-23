@@ -16,6 +16,7 @@
 
 import { BookingStatus } from '@prisma/client';
 import { isBookingOverlapError, isUniqueViolation, prisma } from '../../config/prisma';
+import { logger } from '../../config/logger';
 import { AppError, ErrorCode, NotFoundError, SlotTakenError } from '../../utils/errors';
 import {
   addMinutes,
@@ -31,6 +32,7 @@ import { serviceRepository } from '../services/services.repository';
 import { formatBookingCode, normalizeBookingCode } from './booking-code';
 import { bookingRepository, type BookingWrite } from './bookings.repository';
 import type { BookingDetail, CreateBookingInput } from './bookings.types';
+import { sendBookingConfirmation } from './booking-mail.service';
 
 /** Cuántas veces se reintenta si el código generado choca con uno existente. */
 const CODE_RETRIES = 3;
@@ -268,7 +270,10 @@ export const bookingsService = {
 
     for (const professionalId of candidates) {
       const detail = await tryCreate(input, professionalId, phone);
-      if (detail) return detail;
+      if (detail) {
+        void sendConfirmationEmail(input, detail, professionalId);
+        return detail;
+      }
     }
 
     // Se probó con todos los que podían atenderlo y ninguno lo consiguió.
@@ -337,6 +342,37 @@ export const bookingsService = {
     return toDetail(current, true);
   },
 };
+
+async function sendConfirmationEmail(
+  input: CreateBookingInput,
+  detail: BookingDetail,
+  professionalId: string,
+): Promise<void> {
+  if (!input.customer.email) return;
+
+  const professional = await prisma.professional.findUnique({
+    where: { id: professionalId },
+    select: { name: true },
+  });
+  if (!professional) return;
+
+  const startAt = zonedTimeToInstant(parseDateOnly(detail.date), detail.startTime.split(':').reduce(
+    (minutes, part, index) => minutes + Number(part) * (index === 0 ? 60 : 1),
+    0,
+  ));
+
+  try {
+    await sendBookingConfirmation({
+      email: input.customer.email,
+      firstName: input.customer.firstName,
+      code: detail.code,
+      startAt,
+      professional: professional.name,
+    });
+  } catch (error: unknown) {
+    logger.error({ err: error, bookingCode: detail.code }, 'No se pudo enviar la confirmación por correo.');
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Interno

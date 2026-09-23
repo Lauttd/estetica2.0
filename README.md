@@ -293,10 +293,24 @@ mismo comentario que explica por qué en cada archivo.
 ### Prerenderizado
 
 El sitio público se prerenderiza en el build: el HTML llega con contenido en vez de
-un `<div>` vacío. Las rutas dependen de datos en vivo (`/turnos`) y el panel
-(`/admin/*`) quedan fuera. El build **no depende de que la base esté levantada**:
+un `<div>` vacío. Incluye inicio, catálogo, fichas de servicios y las páginas
+institucionales (nosotros, contacto, galería y FAQ). Las rutas que dependen de
+datos en vivo (`/turnos`) y el panel (`/admin/*`) quedan fuera. El build **no
+depende de que la base esté levantada**:
 si la API no responde, omite las páginas, avisa y termina bien; con
 `PRERENDER_STRICT=true` falla, que es lo que conviene en CI.
+
+### Panel administrativo
+
+El panel web está disponible en `/admin`. La sesión usa un token de acceso solo en
+memoria y un refresh token en cookie `httpOnly`; al recargar, la sesión se renueva
+sin guardar credenciales en `localStorage`. La primera entrada obliga a cambiar la
+contraseña provisoria del seed.
+
+El vertical slice disponible permite consultar la agenda por día y cambiar estados,
+editar precios del catálogo, actualizar la configuración pública y consultar
+usuarios (esta última pantalla requiere rol `ADMIN`). Todas las mutaciones usan los
+endpoints de `/api/admin` y muestran los mensajes de validación de la API.
 
 ---
 

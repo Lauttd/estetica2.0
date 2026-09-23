@@ -29,6 +29,7 @@
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^6.3.1",
+    "@types/nodemailer": "^8.0.2",
     "compression": "^1.7.5",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -37,6 +38,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^10.0.10",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
     "zod": "^3.24.1"

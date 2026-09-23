@@ -55,7 +55,7 @@ export function ServiceCard({ service, iconName, onDetails, action }: ServiceCar
   const detailHref = PATHS.serviceDetail(service.slug);
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-card border border-beige bg-ivory shadow-card transition-shadow duration-200 hover:shadow-float">
+    <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-card border border-beige bg-ivory shadow-card transition-shadow duration-200 hover:shadow-float">
       <Link
         to={detailHref}
         className="block aspect-[4/3] overflow-hidden"
@@ -72,12 +72,12 @@ export function ServiceCard({ service, iconName, onDetails, action }: ServiceCar
         />
       </Link>
 
-      <div className="flex flex-1 flex-col p-5">
+      <div className="flex flex-1 flex-col p-3 sm:p-5">
         <p className="text-xs font-medium tracking-wider text-olive uppercase">
           {service.category.name}
         </p>
 
-        <h3 className="mt-2 text-xl">
+        <h3 className="mt-2 text-base sm:text-xl">
           <Link
             to={detailHref}
             className="transition-colors duration-150 hover:text-forest"
@@ -90,9 +90,9 @@ export function ServiceCard({ service, iconName, onDetails, action }: ServiceCar
           {service.shortDescription}
         </p>
 
-        <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-beige pt-4">
+        <div className="mt-4 flex flex-col gap-1 border-t border-beige pt-3 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-3 sm:gap-y-1 sm:pt-4">
           <PriceTag service={service} />
-          <span className="text-sm text-ink-soft">
+          <span className="text-xs text-ink-soft sm:text-sm">
             {formatDurationOrPending(service.durationMin)}
           </span>
         </div>
@@ -101,7 +101,7 @@ export function ServiceCard({ service, iconName, onDetails, action }: ServiceCar
             tarjetas de distinta altura: sin esto, una descripción de dos líneas
             deja los botones más abajo que la de al lado y la grilla se ve
             desprolija. */}
-        <div className="mt-auto flex gap-2 pt-5">
+        <div className="mt-auto flex flex-col gap-2 pt-4 sm:flex-row sm:pt-5">
           {action !== undefined ? (
             action
           ) : (

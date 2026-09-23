@@ -76,10 +76,19 @@ export function Navbar() {
           {/* En pantallas muy chicas el botón vive solo en el panel: junto al
               logo no entraría sin apretar los dos. */}
           <Link
-            to={PATHS.booking}
+            to={PATHS.myBookings}
             className={buttonStyles({ className: 'hidden sm:inline-flex' })}
           >
-            Reservar turno
+            Mis turnos
+          </Link>
+          <Link
+            to={PATHS.bookingLookup}
+            className={buttonStyles({
+              variant: 'outline',
+              className: 'hidden sm:inline-flex',
+            })}
+          >
+            Consultar mi turno
           </Link>
 
           <button
@@ -141,8 +150,18 @@ export function Navbar() {
             </ul>
 
             <div className="mt-8 flex flex-col gap-3">
-              <Link to={PATHS.booking} className={buttonStyles({ size: 'lg', fullWidth: true })}>
-                Reservar turno
+              <Link               to={PATHS.myBookings} className={buttonStyles({ size: 'lg', fullWidth: true })}>
+                Mis turnos
+              </Link>
+              <Link
+                to={PATHS.bookingLookup}
+                className={buttonStyles({
+                  variant: 'outline',
+                  size: 'lg',
+                  fullWidth: true,
+                })}
+              >
+                Consultar mi turno
               </Link>
 
               {/* Si la estética todavía no cargó el WhatsApp, el botón no se

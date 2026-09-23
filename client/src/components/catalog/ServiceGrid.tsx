@@ -25,10 +25,9 @@ interface ServiceGridProps {
 /**
  * La grilla del catálogo.
  *
- * Una columna en el teléfono y no dos: a 375 px, dos tarjetas dejan el nombre de
- * un servicio como "Limpieza Facial Profunda" cortado en cuatro renglones y el
- * precio apretado contra el borde. Una tarjeta por fila se lee bien y se toca
- * mejor, y como el catálogo se recorre con el filtro, el largo no molesta.
+ * Dos columnas desde el teléfono: el catálogo se recorre mejor y las tarjetas
+ * aprovechan el ancho disponible. Cada celda estira su tarjeta para que las dos
+ * de una fila conserven el mismo tamaño, aunque sus textos tengan distinto largo.
  *
  * En escritorio sí abre: dos, tres y hasta cuatro columnas, que es donde la grilla
  * gana —comparar precios de un vistazo—.
@@ -40,9 +39,9 @@ export function ServiceGrid({
   renderAction,
 }: ServiceGridProps) {
   return (
-    <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <ul className="grid grid-cols-2 items-stretch gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
       {services.map((service) => (
-        <li key={service.id} className="flex">
+        <li key={service.id} className="flex items-stretch">
           <ServiceCard
             service={service}
             iconName={iconByCategory.get(service.category.slug) ?? null}
@@ -66,7 +65,7 @@ export function ServiceGrid({
 export function ServiceGridSkeleton({ count = 8 }: { count?: number }) {
   return (
     <ul
-      className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      className="grid grid-cols-2 items-stretch gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4"
       /* Se anuncia una sola vez como "cargando" en lugar de que un lector de
          pantalla lea ocho tarjetas vacías. */
       aria-busy="true"

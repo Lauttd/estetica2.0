@@ -91,6 +91,14 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link
+                  to={PATHS.myBookings}
+                  className="text-sm text-cream/80 transition-colors hover:text-cream"
+                >
+                  Mis turnos
+                </Link>
+              </li>
             </ul>
           </nav>
 

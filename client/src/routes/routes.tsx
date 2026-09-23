@@ -19,7 +19,18 @@ import { ContactPage } from '@/pages/Contact/ContactPage';
 import { GalleryPage } from '@/pages/Gallery/GalleryPage';
 import { FaqPage } from '@/pages/Faq/FaqPage';
 import { NotFoundPage } from '@/pages/NotFound/NotFoundPage';
+import { MyBookingsPage } from '@/pages/Booking/MyBookingsPage';
 import { PATHS } from './paths';
+import { AuthProvider } from '@/auth/AuthProvider';
+import { AdminGate } from '@/components/admin/AdminGate';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminLoginPage } from '@/pages/Admin/AdminLoginPage';
+import { ChangePasswordPage } from '@/pages/Admin/ChangePasswordPage';
+import { AdminDashboardPage } from '@/pages/Admin/AdminDashboardPage';
+import { AdminAgendaPage } from '@/pages/Admin/AdminAgendaPage';
+import { AdminServicesPage } from '@/pages/Admin/AdminServicesPage';
+import { AdminSettingsPage } from '@/pages/Admin/AdminSettingsPage';
+import { AdminUsersPage } from '@/pages/Admin/AdminUsersPage';
 
 /**
  * La tabla de rutas del sitio.
@@ -47,6 +58,31 @@ function child(path: string): string {
 }
 
 export const routes: RouteObject[] = [
+  {
+    path: PATHS.admin,
+    element: (
+      <AuthProvider>
+        <AdminGate />
+      </AuthProvider>
+    ),
+    children: [
+      { index: true, element: <AdminLoginPage /> },
+      { path: 'login', element: <AdminLoginPage /> },
+      { path: 'cambiar-password', element: <ChangePasswordPage /> },
+      {
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <Navigate to="dashboard" replace /> },
+          { path: 'dashboard', element: <AdminDashboardPage /> },
+          { path: 'turnos', element: <AdminAgendaPage /> },
+          { path: 'agenda', element: <AdminAgendaPage /> },
+          { path: 'servicios', element: <AdminServicesPage /> },
+          { path: 'configuracion', element: <AdminSettingsPage /> },
+          { path: 'usuarios', element: <AdminUsersPage /> },
+        ],
+      },
+    ],
+  },
   {
     path: PATHS.home,
     element: <RootLayout />,
@@ -108,6 +144,7 @@ export const routes: RouteObject[] = [
       { path: child(PATHS.contact), element: <ContactPage /> },
       { path: child(PATHS.gallery), element: <GalleryPage /> },
       { path: child(PATHS.faq), element: <FaqPage /> },
+      { path: child(PATHS.myBookings), element: <MyBookingsPage /> },
 
       // Va último y sin ruta propia: atrapa cualquier dirección que no haya
       // coincidido con las de arriba.

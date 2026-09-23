@@ -68,10 +68,10 @@ export function HomePage() {
 
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
               <Link
-                to={PATHS.booking}
+                to={PATHS.myBookings}
                 className={buttonStyles({ size: 'lg', className: 'w-full sm:w-auto' })}
               >
-                Reservar turno
+                Mis turnos
               </Link>
 
               <Link
