@@ -100,6 +100,7 @@ export const PATHS = {
    * dar de baja nunca más.
    */
   bookingLookup: `${BOOKING}/${BOOKING_PAGE.lookup}`,
+  myBookings: '/mis-turnos',
 
   about: '/nosotros',
   contact: '/contacto',

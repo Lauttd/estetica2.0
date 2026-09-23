@@ -44,7 +44,7 @@ export interface NavItem {
 export const MAIN_NAV: readonly NavItem[] = [
   { label: 'Inicio', to: PATHS.home },
   { label: 'Servicios', to: PATHS.services },
-  { label: 'Turnos', to: PATHS.booking },
+  { label: 'Mis turnos', to: PATHS.myBookings },
   { label: 'Nosotros', to: PATHS.about },
   { label: 'Galería', to: PATHS.gallery },
   { label: 'Preguntas frecuentes', to: PATHS.faq, mobileOnly: true },

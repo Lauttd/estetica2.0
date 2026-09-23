@@ -51,6 +51,9 @@ import {
 } from '@/queries/services.queries';
 import { categoriesQueryOptions } from '@/queries/categories.queries';
 import { siteSettingsQueryOptions } from '@/hooks/useSiteSettings';
+import { faqQueryOptions } from '@/queries/faq.queries';
+import { galleryQueryOptions } from '@/queries/gallery.queries';
+import { scheduleQueryOptions } from '@/queries/schedule.queries';
 
 /** Se reexporta para que `prerender.mjs` no tenga que conocer la capa HTTP. */
 export { setApiBase };
@@ -99,6 +102,7 @@ function splitPath(pathname: string): { path: string; search: string } {
 async function prefetch(pathname: string, queryClient: QueryClient): Promise<boolean> {
   const { path, search } = splitPath(pathname);
 
+  const settingsJob = queryClient.fetchQuery(siteSettingsQueryOptions());
   const jobs: Array<Promise<unknown>> = [
     /**
      * Los datos institucionales los usan la barra y el pie en **todas** las
@@ -106,7 +110,7 @@ async function prefetch(pathname: string, queryClient: QueryClient): Promise<boo
      * dirección vacíos y el navegador los completaría al hidratar, que es
      * justamente el parpadeo que se quiere evitar.
      */
-    queryClient.fetchQuery(siteSettingsQueryOptions()),
+    settingsJob,
   ];
 
   const detailMatch = /^\/servicios\/([^/]+)\/?$/.exec(path);
@@ -126,6 +130,16 @@ async function prefetch(pathname: string, queryClient: QueryClient): Promise<boo
      * encuentre nada y pida todo de nuevo.
      */
     jobs.push(queryClient.fetchQuery(servicesQueryOptions(catalogFiltersFrom(search))));
+  } else if (path === PATHS.home || path === `${PATHS.home}/`) {
+    jobs.push(queryClient.fetchQuery(servicesQueryOptions({ featured: true })));
+    jobs.push(queryClient.fetchQuery(categoriesQueryOptions()));
+  } else if (path === PATHS.faq) {
+    jobs.push(queryClient.fetchQuery(faqQueryOptions()));
+  } else if (path === PATHS.gallery) {
+    jobs.push(queryClient.fetchQuery(galleryQueryOptions()));
+  } else if (path === PATHS.contact) {
+    const settings = await settingsJob;
+    if (!settings.pending.hours) jobs.push(queryClient.fetchQuery(scheduleQueryOptions()));
   }
 
   const results = await Promise.allSettled(jobs);
@@ -273,9 +287,8 @@ export async function render(
 /**
  * Las direcciones que hay que prerenderizar.
  *
- * Hoy son las que tienen datos que valen la pena: el catálogo y una página por
- * servicio. Las siete secciones institucionales se suman cuando tengan contenido
- * —prerenderizar una página que todavía es un encabezado no le sirve a nadie—.
+ * Incluye el catálogo y las páginas institucionales para que buscadores y
+ * previsualizaciones reciban contenido desde el primer pedido.
  *
  * Los slugs se piden paginando, porque el servidor topea `perPage` en 100 y el día
  * que el catálogo pase de ahí la lista tiene que seguir saliendo completa.
@@ -284,7 +297,12 @@ export async function getPrerenderPaths(): Promise<string[]> {
   const slugs = await fetchAllServiceSlugs();
 
   return [
+    PATHS.home,
     PATHS.services,
     ...slugs.map((slug) => PATHS.serviceDetail(slug)),
+    PATHS.about,
+    PATHS.contact,
+    PATHS.gallery,
+    PATHS.faq,
   ];
 }

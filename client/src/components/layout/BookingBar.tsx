@@ -3,7 +3,7 @@ import { buttonStyles } from '@/components/ui/button';
 import { PATHS } from '@/routes/paths';
 
 /**
- * La barra fija de "Reservar turno" en el teléfono (§33).
+ * La barra fija de "Mis turnos" en el teléfono.
  *
  * §33 pide, además del botón flotante de WhatsApp, "un CTA fijo o fácilmente
  * accesible" para reservar, y que desde el inicio se llegue a la reserva en pocos
@@ -42,8 +42,8 @@ export function BookingBar() {
       {/* `py-2.5` y no `py-3`: la barra se come una franja del alto de la pantalla
           en cada página, y el botón ya tiene su propio relleno. */}
       <div className="container-page py-2.5">
-        <Link to={PATHS.booking} className={buttonStyles({ fullWidth: true })}>
-          Reservar turno
+        <Link to={PATHS.myBookings} className={buttonStyles({ fullWidth: true })}>
+          Mis turnos
         </Link>
       </div>
     </div>

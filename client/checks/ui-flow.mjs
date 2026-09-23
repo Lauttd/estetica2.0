@@ -120,6 +120,9 @@ let served = null;
 let chosenDay = null;
 
 for (const dia of dias.slice(0, 6)) {
+  if (!(await path()).endsWith('/fecha')) {
+    await goto('/turnos/fecha');
+  }
   availability.clear();
   await click(`b.getAttribute('aria-label') === ${JSON.stringify(dia)}`, { label: dia });
   await new Promise((r) => setTimeout(r, 1200));

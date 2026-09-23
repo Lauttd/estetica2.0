@@ -14,6 +14,7 @@ import { createApp } from './app';
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { disconnectPrisma, isDatabaseReachable } from './config/prisma';
+import { startBookingReminderWorker } from './modules/bookings/booking-mail.service';
 
 /** Cuánto se espera a que terminen las peticiones en curso antes de cortar todo. */
 const SHUTDOWN_GRACE_MS = 10_000;
@@ -21,6 +22,7 @@ const SHUTDOWN_GRACE_MS = 10_000;
 const app = createApp();
 
 const server: Server = app.listen(env.PORT, () => {
+  const reminderWorker = startBookingReminderWorker();
   logger.info(
     {
       port: env.PORT,
@@ -41,6 +43,10 @@ const server: Server = app.listen(env.PORT, () => {
           '(npm run db:up) y que DATABASE_URL sea correcta.',
       );
     }
+  });
+
+  server.once('close', () => {
+    if (reminderWorker !== null) clearInterval(reminderWorker);
   });
 });
 

@@ -120,6 +120,12 @@ const envSchema = z
     MAX_ADVANCE_DAYS: days(60),
     /** Limpieza entre un turno y el siguiente. */
     BUFFER_MINUTES: minutes(10, 120),
+
+    SMTP_HOST: z.string().min(1).optional(),
+    SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
+    SMTP_USER: z.string().min(1).optional(),
+    SMTP_PASS: z.string().min(1).optional(),
+    EMAIL_FROM: z.string().email().optional(),
   })
   .superRefine((values, ctx) => {
     if (values.JWT_ACCESS_SECRET === values.JWT_REFRESH_SECRET) {
@@ -148,6 +154,15 @@ const envSchema = z
           });
         }
       }
+    }
+
+    const smtpValues = [values.SMTP_HOST, values.SMTP_USER, values.SMTP_PASS, values.EMAIL_FROM];
+    if (smtpValues.some((value) => value !== undefined) && smtpValues.some((value) => value === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['SMTP_HOST'],
+        message: 'SMTP_HOST, SMTP_USER, SMTP_PASS y EMAIL_FROM deben configurarse juntos',
+      });
     }
   });
 

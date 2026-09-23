@@ -207,9 +207,13 @@ function DayChip({ date, label, selected, disabled, onSelect }: DayChipProps) {
       >
         {label ?? formatWeekdayShort(date)}
       </span>
-      <span className="text-lg font-medium" aria-hidden="true">
+      <span
+        className={cn('text-lg font-medium', selected && 'line-through decoration-2')}
+        aria-hidden="true"
+      >
         {formatDayOfMonth(date)}
       </span>
+      {selected && <span className="sr-only">Día seleccionado</span>}
     </button>
   );
 }
