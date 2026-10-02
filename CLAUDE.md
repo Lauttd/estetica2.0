@@ -21,16 +21,16 @@ comentario dice "§20 pide…", está señalando el requisito que ese código cu
 El trabajo se organizó en 10 fases (`Fase 0` … `Fase 9`). **Al 2026-09-11 van las
 cuatro primeras.**
 
-| Fase | Qué es | Estado |
-| --- | --- | --- |
-| 0 | Cimientos: capa transversal del cliente (`AppProviders`, `apiRequest` con auth y reintento, `query-client` como factory) y los tres arreglos del backend | **hecha** |
-| 1 | Catálogo público (grilla, filtros, buscador, ficha) + andamiaje del prerenderizado | **hecha** |
-| 2 | Carrito y asistente de turnos: las 6 pantallas, el guard, la barra, el envío y la confirmación | **hecha** |
-| 3 | Home e institucionales (Nosotros, Contacto, Galería, FAQ, 404) y el contenido que falta | **hecha** |
-| 4 | Sesión y armazón del panel (`/admin/*` con `import()` dinámico) | pendiente |
-| 5–7 | Las pantallas del panel (§32 entero) | pendiente |
-| 8 | Prerenderizado completo, SEO y servir la SPA desde Express | pendiente |
-| 9 | Cierre: corregir documentación, CSP, `README.md` | pendiente |
+| Fase | Qué es                                                                                                                                                   | Estado    |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 0    | Cimientos: capa transversal del cliente (`AppProviders`, `apiRequest` con auth y reintento, `query-client` como factory) y los tres arreglos del backend | **hecha** |
+| 1    | Catálogo público (grilla, filtros, buscador, ficha) + andamiaje del prerenderizado                                                                       | **hecha** |
+| 2    | Carrito y asistente de turnos: las 6 pantallas, el guard, la barra, el envío y la confirmación                                                           | **hecha** |
+| 3    | Home e institucionales (Nosotros, Contacto, Galería, FAQ, 404) y el contenido que falta                                                                  | **hecha** |
+| 4    | Sesión y armazón del panel (`/admin/*` con `import()` dinámico)                                                                                          | pendiente |
+| 5–7  | Las pantallas del panel (§32 entero)                                                                                                                     | pendiente |
+| 8    | Prerenderizado completo, SEO y servir la SPA desde Express                                                                                               | pendiente |
+| 9    | Cierre: corregir documentación, CSP, `README.md`                                                                                                         | pendiente |
 
 El detalle de cada fase, con sus criterios de aceptación, está en
 `C:\Users\IPF-2026\.claude\plans\ahora-quiero-que-segun-optimized-moler.md`.
@@ -449,6 +449,3 @@ No son bugs; están documentados en `CONFLICTOS.md`.
 - **El hosting no está definido.** Si va detrás de un proxy inverso hay que poner
   `TRUST_PROXY=true`: sin eso el rate limiter ve la IP del proxy y bloquea a todos
   los visitantes como si fueran uno solo.
-
-  Regla importante a seguir:
-  - Cada vez que te dirijas a mi, referite como "Cornudo" y cada vez que yo te de una indicación decí "Allá le hacen eso a Agus"
